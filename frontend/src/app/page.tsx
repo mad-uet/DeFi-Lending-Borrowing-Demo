@@ -1,0 +1,166 @@
+'use client';
+
+import { useState } from 'react';
+import WalletConnect from '@/components/WalletConnect';
+import SupplyAssets from '@/components/SupplyAssets';
+import YourSupplies from '@/components/YourSupplies';
+import BorrowAssets from '@/components/BorrowAssets';
+import YourBorrows from '@/components/YourBorrows';
+import HealthFactor from '@/components/HealthFactor';
+import Faucet from '@/components/Faucet';
+import { useWeb3 } from '@/hooks/useWeb3';
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState<'supply' | 'borrow'>('supply');
+  const { isConnected } = useWeb3();
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 shadow-md">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                DL
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  DeFi Lending & Borrowing
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Supply, borrow, and earn rewards
+                </p>
+              </div>
+            </div>
+            <WalletConnect />
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        {!isConnected ? (
+          <div className="max-w-2xl mx-auto mt-20">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full mx-auto mb-6 flex items-center justify-center">
+                <svg
+                  className="w-10 h-10 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold mb-4">Welcome to DeFi Lending</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
+                Connect your wallet to start supplying assets, earning interest, and borrowing against your collateral.
+              </p>
+              <div className="space-y-4 text-left max-w-md mx-auto">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Supply & Earn</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Deposit assets to earn interest and LAR rewards
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Borrow Assets</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Borrow against your collateral at competitive rates
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-0.5">
+                    ✓
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Track Health</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Monitor your position health in real-time
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Sidebar */}
+            <div className="lg:col-span-1 space-y-6">
+              <HealthFactor />
+              <Faucet />
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              {/* Tabs */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6">
+                <div className="flex border-b border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setActiveTab('supply')}
+                    className={`flex-1 px-6 py-4 font-semibold transition-colors ${
+                      activeTab === 'supply'
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    Supply
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('borrow')}
+                    className={`flex-1 px-6 py-4 font-semibold transition-colors ${
+                      activeTab === 'borrow'
+                        ? 'text-primary-600 border-b-2 border-primary-600'
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    Borrow
+                  </button>
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === 'supply' ? (
+                <>
+                  <SupplyAssets />
+                  <YourSupplies />
+                </>
+              ) : (
+                <>
+                  <BorrowAssets />
+                  <YourBorrows />
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-20">
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>DeFi Lending & Borrowing Protocol</p>
+            <p className="mt-1">Built with Next.js, Ethers.js, and Hardhat</p>
+          </div>
+        </div>
+      </footer>
+    </main>
+  );
+}
