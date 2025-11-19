@@ -19,6 +19,16 @@ contract LARToken is ERC20, Ownable {
     }
 
     /**
+     * @notice Mints tokens to a specified address
+     * @dev Only callable by owner, used for deposit rewards
+     * @param to Address to mint tokens to
+     * @param amount Amount of tokens to mint
+     */
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
+    /**
      * @notice Burns tokens from a specified address
      * @dev Only callable by owner, used for withdrawal mechanisms
      * @param from Address to burn tokens from
