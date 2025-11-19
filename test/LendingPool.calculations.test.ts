@@ -1,12 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { LendingPool, LARToken, InterestRateModel, MockERC20, MockV3Aggregator } from "../typechain-types";
+import { LendingPool, LARToken, InterestRateModel, MockERC20, MockV3Aggregator, PriceOracle } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("LendingPool - Calculations", function () {
     let lendingPool: LendingPool;
     let larToken: LARToken;
     let interestRateModel: InterestRateModel;
+    let priceOracle: PriceOracle;
     let weth: MockERC20;
     let dai: MockERC20;
     let usdc: MockERC20;
@@ -50,18 +51,27 @@ describe("LendingPool - Calculations", function () {
         const InterestRateModelFactory = await ethers.getContractFactory("InterestRateModel");
         interestRateModel = await InterestRateModelFactory.deploy();
 
+        const PriceOracleFactory = await ethers.getContractFactory("PriceOracle");
+        priceOracle = await PriceOracleFactory.deploy();
+
+        await priceOracle.setPriceFeed(await weth.getAddress(), await wethPriceFeed.getAddress());
+        await priceOracle.setPriceFeed(await dai.getAddress(), await daiPriceFeed.getAddress());
+        await priceOracle.setPriceFeed(await usdc.getAddress(), await usdcPriceFeed.getAddress());
+        await priceOracle.setPriceFeed(await link.getAddress(), await linkPriceFeed.getAddress());
+
         const LendingPoolFactory = await ethers.getContractFactory("LendingPool");
         lendingPool = await LendingPoolFactory.deploy(
             await larToken.getAddress(),
-            await interestRateModel.getAddress()
+            await interestRateModel.getAddress(),
+            await priceOracle.getAddress()
         );
 
         await larToken.transferOwnership(await lendingPool.getAddress());
 
-        await lendingPool.addToken(await weth.getAddress(), await wethPriceFeed.getAddress(), WETH_LTV);
-        await lendingPool.addToken(await dai.getAddress(), await daiPriceFeed.getAddress(), DAI_LTV);
-        await lendingPool.addToken(await usdc.getAddress(), await usdcPriceFeed.getAddress(), USDC_LTV);
-        await lendingPool.addToken(await link.getAddress(), await linkPriceFeed.getAddress(), LINK_LTV);
+        await lendingPool.addToken(await weth.getAddress(), WETH_LTV);
+        await lendingPool.addToken(await dai.getAddress(), DAI_LTV);
+        await lendingPool.addToken(await usdc.getAddress(), USDC_LTV);
+        await lendingPool.addToken(await link.getAddress(), LINK_LTV);
 
         await weth.mint(user1.address, ethers.parseEther("100"));
         await dai.mint(user1.address, ethers.parseEther("100000"));
@@ -277,22 +287,23 @@ describe("LendingPool - Calculations", function () {
     describe("Asset Price Retrieval", function () {
         it("should return correct price for WETH", async function () {
             const price = await lendingPool.getAssetPrice(await weth.getAddress());
-            expect(price).to.equal(WETH_PRICE);
+            // Price is now returned in 18 decimals
+            expect(price).to.equal(ethers.parseEther("2000"));
         });
 
         it("should return correct price for DAI", async function () {
             const price = await lendingPool.getAssetPrice(await dai.getAddress());
-            expect(price).to.equal(DAI_PRICE);
+            expect(price).to.equal(ethers.parseEther("1"));
         });
 
         it("should return correct price for USDC", async function () {
             const price = await lendingPool.getAssetPrice(await usdc.getAddress());
-            expect(price).to.equal(USDC_PRICE);
+            expect(price).to.equal(ethers.parseEther("1"));
         });
 
         it("should return correct price for LINK", async function () {
             const price = await lendingPool.getAssetPrice(await link.getAddress());
-            expect(price).to.equal(LINK_PRICE);
+            expect(price).to.equal(ethers.parseEther("15"));
         });
 
         it("should revert for token without price feed", async function () {

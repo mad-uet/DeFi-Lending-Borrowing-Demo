@@ -39,6 +39,6 @@ interface ILendingPool {
     function getAssetPrice(address token) external view returns (uint256);
     
     // Admin functions
-    function addToken(address token, address priceFeed, uint16 ltv) external;
+    function addToken(address token, uint16 ltv) external;
     function deactivateToken(address token) external;
 }

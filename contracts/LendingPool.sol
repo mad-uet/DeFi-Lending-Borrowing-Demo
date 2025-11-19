@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./interfaces/ILendingPool.sol";
 import "./LARToken.sol";
 import "./InterestRateModel.sol";
+import "./PriceOracle.sol";
 
 /**
  * @title LendingPool
@@ -17,7 +18,6 @@ contract LendingPool is ILendingPool, Ownable {
     // Structs
     struct TokenConfig {
         address tokenAddress;
-        address priceFeed;
         uint16 ltv; // Loan-to-value in basis points (7500 = 75%)
         bool isActive;
     }
@@ -36,6 +36,7 @@ contract LendingPool is ILendingPool, Ownable {
 
     LARToken public immutable larToken;
     InterestRateModel public immutable interestRateModel;
+    PriceOracle public immutable priceOracle;
 
     address[] public supportedTokens;
 
@@ -49,13 +50,16 @@ contract LendingPool is ILendingPool, Ownable {
      * @notice Constructor
      * @param _larToken Address of LAR reward token
      * @param _interestRateModel Address of interest rate model
+     * @param _priceOracle Address of price oracle
      */
-    constructor(address _larToken, address _interestRateModel) Ownable(msg.sender) {
+    constructor(address _larToken, address _interestRateModel, address _priceOracle) Ownable(msg.sender) {
         require(_larToken != address(0), "Invalid LAR token address");
         require(_interestRateModel != address(0), "Invalid interest rate model address");
+        require(_priceOracle != address(0), "Invalid price oracle address");
         
         larToken = LARToken(_larToken);
         interestRateModel = InterestRateModel(_interestRateModel);
+        priceOracle = PriceOracle(_priceOracle);
     }
 
     /**
@@ -232,45 +236,31 @@ contract LendingPool is ILendingPool, Ownable {
     /**
      * @notice Get asset price from oracle
      * @param token Address of the token
-     * @return price Price in USD with 8 decimals
+     * @return price Price in USD with 18 decimals
      */
     function getAssetPrice(address token) external view override returns (uint256) {
-        require(tokenConfigs[token].priceFeed != address(0), "Price feed not set");
-        
-        (
-            /* uint80 roundID */,
-            int256 price,
-            /* uint256 startedAt */,
-            /* uint256 timeStamp */,
-            /* uint80 answeredInRound */
-        ) = AggregatorV3Interface(tokenConfigs[token].priceFeed).latestRoundData();
-        
-        require(price > 0, "Invalid price");
-        return uint256(price);
+        return priceOracle.getPrice(token);
     }
 
     /**
      * @notice Add a new supported token
      * @param token Address of the token
-     * @param priceFeed Address of the Chainlink price feed
      * @param ltv Loan-to-value ratio in basis points
      */
-    function addToken(address token, address priceFeed, uint16 ltv) external override onlyOwner {
+    function addToken(address token, uint16 ltv) external override onlyOwner {
         require(token != address(0), "Invalid token address");
-        require(priceFeed != address(0), "Invalid price feed address");
         require(ltv > 0 && ltv <= BASIS_POINTS, "Invalid LTV");
         require(tokenConfigs[token].tokenAddress == address(0), "Token already added");
 
         tokenConfigs[token] = TokenConfig({
             tokenAddress: token,
-            priceFeed: priceFeed,
             ltv: ltv,
             isActive: true
         });
 
         supportedTokens.push(token);
 
-        emit TokenAdded(token, priceFeed, ltv);
+        emit TokenAdded(token, address(0), ltv); // priceFeed is now in PriceOracle
     }
 
     /**
@@ -292,12 +282,12 @@ contract LendingPool is ILendingPool, Ownable {
      * @return USD value with 18 decimals
      */
     function _calculateUSDValue(address token, uint256 amount) internal view returns (uint256) {
-        uint256 price = this.getAssetPrice(token);
+        uint256 price = priceOracle.getPrice(token); // Price already in 18 decimals
         uint8 decimals = IERC20Metadata(token).decimals();
         
-        // Normalize to 18 decimals and multiply by price
-        // price has 8 decimals, we want result in 18 decimals
-        return (amount * price * USD_PRECISION) / (10 ** decimals) / PRICE_PRECISION;
+        // Normalize token amount to 18 decimals and multiply by price
+        // price has 18 decimals, we want result in 18 decimals
+        return (amount * price) / (10 ** decimals);
     }
 
     /**
@@ -361,18 +351,4 @@ contract LendingPool is ILendingPool, Ownable {
         
         return borrowingPower;
     }
-}
-
-// Chainlink AggregatorV3Interface
-interface AggregatorV3Interface {
-    function latestRoundData()
-        external
-        view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
 }

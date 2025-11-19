@@ -1,12 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { LendingPool, LARToken, InterestRateModel, MockERC20, MockV3Aggregator } from "../typechain-types";
+import { LendingPool, LARToken, InterestRateModel, MockERC20, MockV3Aggregator, PriceOracle } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 describe("LendingPool - Borrow", function () {
     let lendingPool: LendingPool;
     let larToken: LARToken;
     let interestRateModel: InterestRateModel;
+    let priceOracle: PriceOracle;
     let weth: MockERC20;
     let dai: MockERC20;
     let usdc: MockERC20;
@@ -54,21 +55,32 @@ describe("LendingPool - Borrow", function () {
         const InterestRateModelFactory = await ethers.getContractFactory("InterestRateModel");
         interestRateModel = await InterestRateModelFactory.deploy();
 
+        // Deploy PriceOracle
+        const PriceOracleFactory = await ethers.getContractFactory("PriceOracle");
+        priceOracle = await PriceOracleFactory.deploy();
+
+        // Set price feeds in PriceOracle
+        await priceOracle.setPriceFeed(await weth.getAddress(), await wethPriceFeed.getAddress());
+        await priceOracle.setPriceFeed(await dai.getAddress(), await daiPriceFeed.getAddress());
+        await priceOracle.setPriceFeed(await usdc.getAddress(), await usdcPriceFeed.getAddress());
+        await priceOracle.setPriceFeed(await link.getAddress(), await linkPriceFeed.getAddress());
+
         // Deploy LendingPool
         const LendingPoolFactory = await ethers.getContractFactory("LendingPool");
         lendingPool = await LendingPoolFactory.deploy(
             await larToken.getAddress(),
-            await interestRateModel.getAddress()
+            await interestRateModel.getAddress(),
+            await priceOracle.getAddress()
         );
 
         // Transfer ownership of LARToken to LendingPool
         await larToken.transferOwnership(await lendingPool.getAddress());
 
         // Add supported tokens
-        await lendingPool.addToken(await weth.getAddress(), await wethPriceFeed.getAddress(), WETH_LTV);
-        await lendingPool.addToken(await dai.getAddress(), await daiPriceFeed.getAddress(), DAI_LTV);
-        await lendingPool.addToken(await usdc.getAddress(), await usdcPriceFeed.getAddress(), USDC_LTV);
-        await lendingPool.addToken(await link.getAddress(), await linkPriceFeed.getAddress(), LINK_LTV);
+        await lendingPool.addToken(await weth.getAddress(), WETH_LTV);
+        await lendingPool.addToken(await dai.getAddress(), DAI_LTV);
+        await lendingPool.addToken(await usdc.getAddress(), USDC_LTV);
+        await lendingPool.addToken(await link.getAddress(), LINK_LTV);
 
         // Mint test tokens to users
         await weth.mint(user1.address, ethers.parseEther("100"));

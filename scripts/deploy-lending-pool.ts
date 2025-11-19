@@ -47,16 +47,37 @@ async function main() {
     await linkPriceFeed.waitForDeployment();
     console.log("   LINK/USD Price Feed deployed to:", await linkPriceFeed.getAddress());
 
-    // Step 3: Deploy LARToken
-    console.log("\n3. Deploying LARToken...");
+    // Step 3: Deploy PriceOracle
+    console.log("\n3. Deploying PriceOracle...");
+    const PriceOracleFactory = await ethers.getContractFactory("PriceOracle");
+    const priceOracle = await PriceOracleFactory.deploy();
+    await priceOracle.waitForDeployment();
+    console.log("   PriceOracle deployed to:", await priceOracle.getAddress());
+
+    // Set all price feeds in PriceOracle
+    console.log("\n   Setting price feeds in PriceOracle...");
+    await (await priceOracle.setPriceFeed(await weth.getAddress(), await wethPriceFeed.getAddress())).wait();
+    console.log("   ✓ WETH price feed set");
+    
+    await (await priceOracle.setPriceFeed(await dai.getAddress(), await daiPriceFeed.getAddress())).wait();
+    console.log("   ✓ DAI price feed set");
+    
+    await (await priceOracle.setPriceFeed(await usdc.getAddress(), await usdcPriceFeed.getAddress())).wait();
+    console.log("   ✓ USDC price feed set");
+    
+    await (await priceOracle.setPriceFeed(await link.getAddress(), await linkPriceFeed.getAddress())).wait();
+    console.log("   ✓ LINK price feed set");
+
+    // Step 4: Deploy LARToken
+    console.log("\n4. Deploying LARToken...");
     const LARTokenFactory = await ethers.getContractFactory("LARToken");
     const larToken = await LARTokenFactory.deploy();
     await larToken.waitForDeployment();
     console.log("   LARToken deployed to:", await larToken.getAddress());
     console.log("   Initial supply:", ethers.formatEther(await larToken.totalSupply()), "LAR");
 
-    // Step 4: Deploy InterestRateModel
-    console.log("\n4. Deploying InterestRateModel...");
+    // Step 5: Deploy InterestRateModel
+    console.log("\n5. Deploying InterestRateModel...");
     const InterestRateModelFactory = await ethers.getContractFactory("InterestRateModel");
     const interestRateModel = await InterestRateModelFactory.deploy();
     await interestRateModel.waitForDeployment();
@@ -66,44 +87,45 @@ async function main() {
     console.log("   Slope 1:", await interestRateModel.SLOPE_1(), "%");
     console.log("   Slope 2:", await interestRateModel.SLOPE_2(), "%");
 
-    // Step 5: Deploy LendingPool
-    console.log("\n5. Deploying LendingPool...");
+    // Step 6: Deploy LendingPool
+    console.log("\n6. Deploying LendingPool...");
     const LendingPoolFactory = await ethers.getContractFactory("LendingPool");
     const lendingPool = await LendingPoolFactory.deploy(
         await larToken.getAddress(),
-        await interestRateModel.getAddress()
+        await interestRateModel.getAddress(),
+        await priceOracle.getAddress()
     );
     await lendingPool.waitForDeployment();
     console.log("   LendingPool deployed to:", await lendingPool.getAddress());
 
-    // Step 6: Transfer LARToken ownership to LendingPool
-    console.log("\n6. Transferring LARToken ownership to LendingPool...");
+    // Step 7: Transfer LARToken ownership to LendingPool
+    console.log("\n7. Transferring LARToken ownership to LendingPool...");
     const tx = await larToken.transferOwnership(await lendingPool.getAddress());
     await tx.wait();
     console.log("   Ownership transferred successfully");
 
-    // Step 7: Add supported tokens to LendingPool
-    console.log("\n7. Adding supported tokens to LendingPool...");
+    // Step 8: Add supported tokens to LendingPool
+    console.log("\n8. Adding supported tokens to LendingPool...");
     
     const WETH_LTV = 7500; // 75%
     const DAI_LTV = 8000;  // 80%
     const USDC_LTV = 8000; // 80%
     const LINK_LTV = 6000; // 60%
 
-    await (await lendingPool.addToken(await weth.getAddress(), await wethPriceFeed.getAddress(), WETH_LTV)).wait();
+    await (await lendingPool.addToken(await weth.getAddress(), WETH_LTV)).wait();
     console.log("   ✓ WETH added (LTV: 75%)");
 
-    await (await lendingPool.addToken(await dai.getAddress(), await daiPriceFeed.getAddress(), DAI_LTV)).wait();
+    await (await lendingPool.addToken(await dai.getAddress(), DAI_LTV)).wait();
     console.log("   ✓ DAI added (LTV: 80%)");
 
-    await (await lendingPool.addToken(await usdc.getAddress(), await usdcPriceFeed.getAddress(), USDC_LTV)).wait();
+    await (await lendingPool.addToken(await usdc.getAddress(), USDC_LTV)).wait();
     console.log("   ✓ USDC added (LTV: 80%)");
 
-    await (await lendingPool.addToken(await link.getAddress(), await linkPriceFeed.getAddress(), LINK_LTV)).wait();
+    await (await lendingPool.addToken(await link.getAddress(), LINK_LTV)).wait();
     console.log("   ✓ LINK added (LTV: 60%)");
 
-    // Step 8: Mint test tokens to deployer
-    console.log("\n8. Minting test tokens to deployer...");
+    // Step 9: Mint test tokens to deployer
+    console.log("\n9. Minting test tokens to deployer...");
     await (await weth.mint(deployer.address, ethers.parseEther("100"))).wait();
     console.log("   ✓ Minted 100 WETH");
 
@@ -125,6 +147,7 @@ async function main() {
     console.log("LendingPool:       ", await lendingPool.getAddress());
     console.log("LARToken:          ", await larToken.getAddress());
     console.log("InterestRateModel: ", await interestRateModel.getAddress());
+    console.log("PriceOracle:       ", await priceOracle.getAddress());
     console.log("\nToken Addresses:");
     console.log("----------------");
     console.log("WETH:  ", await weth.getAddress(), "(LTV: 75%)");
