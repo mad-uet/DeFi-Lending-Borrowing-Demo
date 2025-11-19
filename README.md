@@ -1,295 +1,296 @@
-# DeFi Lending & Borrowing Protocol
+# DeFi Lending & Borrowing Platform
 
-A complete, production-ready DeFi lending and borrowing protocol with smart contracts and Next.js frontend.
+An educational DeFi protocol demonstrating pool-based lending, over-collateralized borrowing, dynamic interest rates, and liquidation mechanisms with multi-collateral support.
 
-**Built with**: Hardhat, Solidity 0.8.20, Next.js 14, TypeScript, Ethers.js v6, Tailwind CSS
+## 🚀 Features
 
-## 🎯 Current Status: Phase 5 Complete ✅
+- **Pool-Based Liquidity**: Users supply assets to shared liquidity pools and earn interest
+- **Over-Collateralized Borrowing**: Borrow assets against deposited collateral with configurable LTV ratios (WETH: 75%, DAI: 80%, USDC: 80%, LINK: 60%)
+- **Dynamic Interest Rates**: Aave-like dual-slope interest rate model that responds to pool utilization
+- **Chainlink Price Oracles**: Real-time price feeds for accurate collateral valuation
+- **LAR Reward Tokens**: Lenders receive LAR tokens (1:1 with USD value of deposits)
+- **Health Factor Monitoring**: Real-time health factor calculations prevent liquidations
+- **Analytics Dashboard**: Protocol-wide statistics and token market data
+- **Full-Featured Frontend**: Modern Next.js interface with responsive design and dark mode
 
-**Backend**: ✅ Smart contracts deployed and tested  
-**Frontend**: ✅ Full-featured Next.js application  
-**Status**: Ready for user testing and Phase 6 development
+## 📋 Prerequisites
 
-## Phase 1: Project Setup & Foundation ✅
+- **Node.js** 18.0 or higher
+- **npm** or **yarn**
+- **MetaMask** browser extension
 
-### Overview
-Phase 1 establishes the foundational infrastructure for the DeFi protocol, including:
-- Hardhat development environment with TypeScript
-- Mock ERC20 tokens for testing (WETH, DAI, USDC, LINK)
-- Mock Chainlink price feed oracles
-- Comprehensive test suite with 100% coverage
+## 🛠️ Installation
 
-### Technology Stack
-- **Hardhat**: v2.22.0 (Development environment)
-- **Solidity**: v0.8.20 (Smart contract language)
-- **TypeScript**: v5.3.3 (Type-safe development)
-- **Ethers.js**: v6.10.0 (Ethereum library)
-- **OpenZeppelin**: v5.0.1 (Secure contract implementations)
-- **Chainlink**: v0.8.0 (Price feed interfaces)
-- **Chai**: v4.3.10 (Testing framework)
+### 1. Clone and Install
 
-### Project Structure
-```
-DeFi-LeBo-SimApp/
-├── contracts/
-│   └── mocks/
-│       ├── MockERC20.sol           # Gas-optimized ERC20 for testing
-│       └── MockV3Aggregator.sol    # Chainlink price feed mock
-├── scripts/
-│   └── deploy-mocks.ts             # Deployment script for all mocks
-├── test/
-│   ├── setup.test.ts               # Hardhat connectivity tests
-│   └── mocks/
-│       ├── MockERC20.test.ts       # ERC20 token tests
-│       └── MockV3Aggregator.test.ts # Price feed tests
-├── hardhat.config.ts               # Hardhat configuration
-├── tsconfig.json                   # TypeScript configuration
-└── package.json                    # Project dependencies
-```
-
-### Smart Contracts
-
-#### MockERC20
-A gas-optimized ERC20 token implementation for testing purposes.
-
-**Features:**
-- Extends OpenZeppelin's ERC20 implementation
-- Customizable decimals (18 for WETH/DAI/LINK, 6 for USDC)
-- Public mint function (anyone can mint for testing)
-- Immutable decimals for gas savings
-
-**Key Functions:**
-```solidity
-constructor(string memory name_, string memory symbol_, uint8 decimals_)
-function mint(address to, uint256 amount) external
-function decimals() public view override returns (uint8)
-```
-
-**Gas Optimization:**
-- Uses `immutable` for decimals storage
-- Inherits optimized OpenZeppelin implementation
-- Average mint cost: ~67,003 gas
-- Average transfer cost: ~51,628 gas
-
-#### MockV3Aggregator
-A mock implementation of Chainlink's AggregatorV3Interface for testing.
-
-**Features:**
-- Implements Chainlink's price feed interface
-- Configurable decimals (8 for USD pairs, 18 for crypto pairs)
-- Public price update function for testing
-- Round ID tracking
-
-**Key Functions:**
-```solidity
-constructor(uint8 _decimals, int256 _initialAnswer)
-function updateAnswer(int256 _answer) external
-function latestRoundData() external view returns (...)
-function version() external pure returns (uint256)
-function description() external pure returns (string memory)
-```
-
-**Gas Optimization:**
-- Uses `immutable` for decimals
-- Uses `unchecked` for safe round ID increment
-- Average update cost: ~35,879 gas
-- Minimal deployment cost: ~244,130 gas
-
-### Deployed Mock Tokens
-
-| Token | Symbol | Decimals | Initial Price | Use Case |
-|-------|--------|----------|---------------|----------|
-| Wrapped Ether | WETH | 18 | $2,000 | Collateral asset |
-| Dai Stablecoin | DAI | 18 | $1 | Borrowing asset |
-| USD Coin | USDC | 6 | $1 | Borrowing asset |
-| Chainlink Token | LINK | 18 | $15 | Collateral asset |
-
-### Setup Instructions
-
-1. **Install Dependencies**
 ```bash
+git clone <repository-url>
+cd DeFi-LeBo-SimApp
 npm install
 ```
 
-2. **Compile Contracts**
+### 2. Compile Contracts
+
 ```bash
-npm run compile
+npx hardhat compile
 ```
 
-3. **Run Tests**
+### 3. Run Tests (Optional)
+
 ```bash
-npm test
+npx hardhat test
 ```
 
-4. **Run Tests with Gas Reporter**
+Expected: **233+ tests passing**
+
+## 🚀 Quick Start
+
+### Start Local Blockchain
+
+In one terminal, start a Hardhat node:
+
 ```bash
-$env:REPORT_GAS='true'; npm test  # PowerShell
-# OR
-REPORT_GAS=true npm test          # Bash
+npx hardhat node
 ```
 
-5. **Deploy to Local Network**
-```bash
-# Terminal 1: Start local node
-npm run node
+This will:
 
-# Terminal 2: Deploy mocks
-npm run deploy:local
+- Start a local blockchain on `http://127.0.0.1:8545`
+- Display 20 test accounts with private keys
+- Keep running in the foreground
+
+### Deploy Contracts
+
+In a **new terminal**, deploy the contracts:
+
+```bash
+npx hardhat run scripts/deploy-lending-pool.ts --network localhost
 ```
 
-### Test Coverage
+This will deploy all contracts and output their addresses. **Save these addresses** for frontend configuration.
 
-**34 Tests Passing**
-- ✅ Hardhat Setup (3 tests)
-- ✅ MockERC20 (15 tests)
-  - Deployment validation
-  - Minting functionality
-  - Token transfers
-  - Approval & transferFrom
-  - Custom decimals support
-- ✅ MockV3Aggregator (16 tests)
-  - Deployment validation
-  - Price updates
-  - Round data tracking
-  - Different decimal configurations
-  - Version & description
-
-### TDD Approach
-
-Phase 1 was developed following strict Test-Driven Development:
-
-1. **Write Failing Test** → Write test for desired functionality
-2. **Implement Minimal Code** → Add just enough code to pass
-3. **Tests Pass** → Verify all tests pass
-4. **Refactor** → Optimize for gas and code quality
-
-Example workflow:
-1. ✅ Wrote failing MockERC20 tests
-2. ✅ Implemented MockERC20 contract
-3. ✅ All tests passed
-4. ✅ Wrote failing MockV3Aggregator tests
-5. ✅ Implemented MockV3Aggregator contract
-6. ✅ All tests passed
-7. ✅ Created deployment script and verified
-
-### Gas Optimization Techniques
-
-1. **Immutable Variables**: Used for decimals in both contracts
-2. **Unchecked Math**: Used for safe round ID increment in aggregator
-3. **Minimal Storage**: Only essential state variables stored
-4. **Inherited Optimization**: Leveraged OpenZeppelin's optimized ERC20
-
-### Next Steps (Phase 2)
-
-Phase 1 is complete! The foundation is ready for:
-- LendingPool contract implementation
-- Collateral management
-- Borrowing and repayment logic
-- Interest calculation (simple linear interest)
-- Liquidation mechanism
-
-### Commands Reference
+### Copy Contract Artifacts
 
 ```bash
-# Development
-npm run compile          # Compile contracts
-npm test                # Run tests
-npm run test:coverage   # Run coverage report
-npm run node            # Start local Hardhat network
-npm run deploy:local    # Deploy to local network
-
-# Gas Analysis
-$env:REPORT_GAS='true'; npm test  # Windows PowerShell
-REPORT_GAS=true npm test          # Linux/Mac
-```
-
-### Configuration
-
-**Hardhat Network:**
-- Chain ID: 31337
-- Block Gas Limit: 30,000,000
-- Solidity Optimizer: Enabled (200 runs)
-
-**Compiler:**
-- Solidity: 0.8.20
-- EVM Target: Paris
-
-### License
-MIT
-
-## Phase 5: Full-Featured Frontend ✅
-
-### Overview
-Complete Next.js 14 frontend application with wallet integration, real-time data, and responsive design.
-
-### Features
-- **Wallet Integration**: MetaMask connection with auto-reconnect
-- **Supply & Earn**: Deposit assets to earn interest and LAR rewards
-- **Borrow**: Borrow assets against collateral with health factor monitoring
-- **Withdraw & Repay**: Manage positions with real-time updates
-- **Token Faucet**: Get test tokens for development
-- **Responsive Design**: Mobile-friendly interface
-- **Dark Mode**: Complete theme support
-
-### Tech Stack
-- Next.js 14 (App Router)
-- TypeScript
-- Ethers.js v6
-- Tailwind CSS
-- SWR (Data fetching)
-- React Hot Toast (Notifications)
-
-### Quick Start
-
-1. **Install frontend dependencies**:
-```bash
-cd frontend
-npm install
-```
-
-2. **Configure environment** (after deploying contracts):
-```bash
-cd ..
 npx ts-node scripts/copy-artifacts-to-frontend.ts
 ```
 
-3. **Start development server**:
+### Configure Frontend
+
+1. Navigate to frontend directory:
+
 ```bash
 cd frontend
+```
+
+2. Create `.env.local` file with deployed contract addresses:
+
+```bash
+NEXT_PUBLIC_LENDING_POOL_ADDRESS=0x...
+NEXT_PUBLIC_LAR_TOKEN_ADDRESS=0x...
+NEXT_PUBLIC_INTEREST_RATE_MODEL_ADDRESS=0x...
+NEXT_PUBLIC_PRICE_ORACLE_ADDRESS=0x...
+NEXT_PUBLIC_WETH_ADDRESS=0x...
+NEXT_PUBLIC_DAI_ADDRESS=0x...
+NEXT_PUBLIC_USDC_ADDRESS=0x...
+NEXT_PUBLIC_LINK_ADDRESS=0x...
+NEXT_PUBLIC_CHAIN_ID=31337
+```
+
+3. Install frontend dependencies and start:
+
+```bash
+npm install
 npm run dev
 ```
 
-4. **Open browser**: http://localhost:3000
+The application will be available at `http://localhost:3000`
 
-### Documentation
-- **frontend/README.md**: Complete user guide
-- **frontend/QUICKSTART.md**: Step-by-step setup
-- **frontend/INTEGRATION.md**: Technical documentation
-- **PHASE5_SUMMARY.md**: Implementation details
-- **PHASE5_CHECKLIST.md**: Feature checklist
+### Configure MetaMask
 
-### Frontend Statistics
-- 13 TSX Components
-- 6 TypeScript Hooks
-- 4 Transaction Modals
-- 2 Utility Libraries
-- ~3,500 lines of code
-- Real-time updates (5s interval)
-- Full type safety
+1. Open MetaMask → Add Network → Add a network manually
+2. Enter:
+   - **Network Name**: Hardhat Local
+   - **RPC URL**: `http://127.0.0.1:8545`
+   - **Chain ID**: `31337`
+   - **Currency Symbol**: ETH
+3. Import test account private keys from Hardhat node output
 
----
+## 📖 Usage Guide
 
-## 📋 All Phases Complete
+### 1. Connect Wallet & Get Test Tokens
 
-- ✅ **Phase 1**: Project Setup & Mock Contracts
-- ✅ **Phase 2**: LAR Token & Interest Rate Model
-- ✅ **Phase 3**: Lending Pool Core Logic
-- ✅ **Phase 4**: Price Oracle & Oracle Integration
+- Open `http://localhost:3000`
+- Click "Connect Wallet"
+- Use Faucet tab to get test tokens (10 WETH, 10,000 DAI, 10,000 USDC, 100 LINK)
+
+### 2. Supply Assets (Earn Interest)
+
+- Go to "Supply" tab
+- Select a token and enter amount
+- Approve token spending (first time only)
+- Confirm supply transaction
+- **Receive LAR tokens** (1:1 with USD value)
+
+### 3. Borrow Assets
+
+- Ensure you have sufficient collateral supplied
+- Go to "Borrow" tab
+- Select a token and enter amount
+- Monitor your health factor
+- Confirm borrow transaction
+
+### 4. Monitor Health Factor
+
+- **Health Factor** = (Collateral Value × Liquidation Threshold) / Total Debt
+- **Safe**: > 1.5 (green)
+- **Warning**: 1.0 - 1.5 (yellow)
+- **Danger**: < 1.0 (red, risk of liquidation)
+
+### 5. Repay & Withdraw
+
+- **Repay**: Select borrowed token, enter amount, confirm
+- **Withdraw**: Select supplied token, enter amount (limited by health factor), confirm
+
+## 🏗️ Architecture
+
+For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md)
+
+### Core Contracts
+
+1. **LendingPool**: Main contract for deposits, withdrawals, borrows, and repayments
+2. **LARToken**: ERC20 reward token minted for lenders
+3. **InterestRateModel**: Dual-slope interest rate calculation
+4. **PriceOracle**: Chainlink-based price feeds
+
+### Interest Rate Model
+
+```
+If Utilization < 80% (Optimal):
+  Rate = BaseRate + (Utilization × Slope1)
+
+If Utilization >= 80%:
+  Rate = BaseRate + (OptimalUtil × Slope1) + ((Utilization - OptimalUtil) × Slope2)
+```
+
+Example rates:
+
+- 0% utilization: 2% APY
+- 50% utilization: 6% APY
+- 80% utilization: 10% APY
+- 95% utilization: 40% APY
+
+## 🧪 Testing
+
+### Run All Tests
+
+```bash
+npx hardhat test
+```
+
+### Run Specific Test Suite
+
+```bash
+npx hardhat test test/LendingPool.deposit.test.ts
+```
+
+### Generate Coverage Report
+
+```bash
+npx hardhat coverage
+```
+
+### Test Categories
+
+- **Unit Tests**: Individual contract functionality
+- **Integration Tests**: Multi-contract interactions
+- **Scenario Tests**: Real-world use cases (multi-user, interest accrual)
+
+Expected: **233+ tests passing** with **100% coverage**
+
+## 📊 Protocol Analytics
+
+Access the analytics dashboard at `http://localhost:3000/analytics` to view:
+
+- Total Value Locked (TVL)
+- Total Borrowed across all tokens
+- Overall utilization rate
+- Per-token statistics (supply APY, borrow APY, utilization)
+- LAR tokens in circulation
+
+## 🎮 Demo Scenarios
+
+For detailed demo walkthroughs, see [docs/demo-scenarios.md](./docs/demo-scenarios.md)
+
+### Quick Demo
+
+1. **Account A**: Supply 5 WETH → Receive ~10,000 LAR tokens
+2. **Account B**: Supply 10,000 DAI → Borrow 2 WETH
+3. **Account C**: Supply mixed collateral → Borrow LINK
+4. View analytics dashboard to see protocol statistics
+
+## 📚 Documentation
+
+- [Architecture Guide](./ARCHITECTURE.md) - System design and components
+- [Demo Scenarios](./docs/demo-scenarios.md) - Step-by-step walkthroughs
+- [Deployment Guide](./DEPLOYMENT.md) - Production deployment instructions
+- [Testing Guide](./docs/TESTING.md) - How to run and write tests
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Frontend Guide](./frontend/README.md) - Frontend setup and development
+- [Contributing](./CONTRIBUTING.md) - Guidelines for contributors
+
+## 🎯 Project Status
+
+- ✅ **Phase 1**: Project Setup & Mock Contracts (34 tests)
+- ✅ **Phase 2**: LAR Token & Interest Rate Model (62 tests)
+- ✅ **Phase 3**: Lending Pool Core Logic (169 tests)
+- ✅ **Phase 4**: Price Oracle & Integration (225 tests)
 - ✅ **Phase 5**: Full-Featured Frontend (Next.js)
-- 🔜 **Phase 6**: Analytics Dashboard & Advanced Features
+- ✅ **Phase 6**: Analytics Dashboard & Documentation (233+ tests)
+
+**Total Tests**: 233+ passing | **Coverage**: 100% | **Status**: Complete
+
+## 🔐 Security Considerations
+
+This is an **educational project** for learning DeFi concepts. It is **NOT audited** and should **NOT** be used in production with real funds.
+
+Key security features implemented:
+
+- ✅ Reentrancy protection (checks-effects-interactions pattern)
+- ✅ Access control (Ownable)
+- ✅ Input validation
+- ✅ Integer overflow protection (Solidity 0.8+)
+- ✅ Price staleness checks
+- ✅ Health factor validation
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
+
+- Code style
+- Testing requirements
+- Documentation standards
+- Pull request process
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- Inspired by [Aave Protocol](https://aave.com/)
+- Uses [Chainlink](https://chain.link/) price feeds
+- Built with [Hardhat](https://hardhat.org/)
+- Frontend with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/)
+
+## 📞 Support
+
+For questions or issues:
+
+1. Check [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)
+2. Review existing issues
+3. Open a new issue with detailed description
 
 ---
 
-**Project Status**: Production-Ready for Testing  
-**Last Updated**: November 19, 2025  
-**License**: MIT
+**Built for educational purposes** | Learn DeFi concepts through hands-on development

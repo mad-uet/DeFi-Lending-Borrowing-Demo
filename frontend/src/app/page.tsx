@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import WalletConnect from '@/components/WalletConnect';
 import SupplyAssets from '@/components/SupplyAssets';
 import YourSupplies from '@/components/YourSupplies';
@@ -20,18 +21,34 @@ export default function Home() {
       <header className="bg-white dark:bg-gray-800 shadow-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                DL
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                  DL
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    DeFi Lending & Borrowing
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Supply, borrow, and earn rewards
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  DeFi Lending & Borrowing
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Supply, borrow, and earn rewards
-                </p>
-              </div>
+              <nav className="hidden md:flex items-center gap-4">
+                <Link
+                  href="/"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/analytics"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                >
+                  Analytics
+                </Link>
+              </nav>
             </div>
             <WalletConnect />
           </div>
