@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
   ];
 
   useEffect(() => {
-    if (isConnected && contracts.lendingPool && contracts.priceOracle && contracts.interestRateModel && contracts.larToken) {
+    if (isConnected && contracts && contracts.lendingPool && contracts.priceOracle && contracts.interestRateModel) {
       fetchAnalytics();
       const interval = setInterval(fetchAnalytics, 10000); // Update every 10 seconds
       return () => clearInterval(interval);

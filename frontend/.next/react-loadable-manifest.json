@@ -1,0 +1,52 @@
+{
+  "components\\Faucet.tsx -> @/lib/contracts": {
+    "id": "components\\Faucet.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "components\\Faucet.tsx -> ethers": {
+    "id": "components\\Faucet.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  },
+  "components\\modals\\ModalBorrow.tsx -> @/lib/contracts": {
+    "id": "components\\modals\\ModalBorrow.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "components\\modals\\ModalBorrow.tsx -> ethers": {
+    "id": "components\\modals\\ModalBorrow.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  },
+  "components\\modals\\ModalRepay.tsx -> @/lib/contracts": {
+    "id": "components\\modals\\ModalRepay.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "components\\modals\\ModalRepay.tsx -> ethers": {
+    "id": "components\\modals\\ModalRepay.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  },
+  "components\\modals\\ModalSupply.tsx -> @/lib/contracts": {
+    "id": "components\\modals\\ModalSupply.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "components\\modals\\ModalSupply.tsx -> ethers": {
+    "id": "components\\modals\\ModalSupply.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  },
+  "components\\modals\\ModalWithdraw.tsx -> @/lib/contracts": {
+    "id": "components\\modals\\ModalWithdraw.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "components\\modals\\ModalWithdraw.tsx -> ethers": {
+    "id": "components\\modals\\ModalWithdraw.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  }
+}

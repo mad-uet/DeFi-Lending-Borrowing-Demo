@@ -8,6 +8,7 @@ export interface Web3State {
   chainId: number;
   connect: () => Promise<void>;
   disconnect: () => void;
+  switchNetwork?: () => Promise<void>;
 }
 
 export interface Asset {

@@ -1,4 +1,6 @@
 import { ethers } from "hardhat";
+import * as fs from "fs";
+import * as path from "path";
 
 async function main() {
     console.log("Starting LendingPool deployment...\n");
@@ -161,6 +163,27 @@ async function main() {
     console.log("USDC/USD: ", await usdcPriceFeed.getAddress(), "($1)");
     console.log("LINK/USD: ", await linkPriceFeed.getAddress(), "($15)");
     console.log("\n" + "=".repeat(60));
+
+    // Save addresses to deployments/localhost.json
+    const deploymentsDir = path.join(__dirname, "../deployments");
+    if (!fs.existsSync(deploymentsDir)) {
+        fs.mkdirSync(deploymentsDir, { recursive: true });
+    }
+
+    const addresses = {
+        LendingPool: await lendingPool.getAddress(),
+        LARToken: await larToken.getAddress(),
+        InterestRateModel: await interestRateModel.getAddress(),
+        PriceOracle: await priceOracle.getAddress(),
+        WETH: await weth.getAddress(),
+        DAI: await dai.getAddress(),
+        USDC: await usdc.getAddress(),
+        LINK: await link.getAddress(),
+    };
+
+    const deploymentPath = path.join(deploymentsDir, "localhost.json");
+    fs.writeFileSync(deploymentPath, JSON.stringify(addresses, null, 2));
+    console.log(`\n✅ Contract addresses saved to ${deploymentPath}`);
 }
 
 main()

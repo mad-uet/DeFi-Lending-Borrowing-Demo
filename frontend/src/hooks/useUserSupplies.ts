@@ -4,29 +4,42 @@ import useSWR from 'swr';
 import { useWeb3 } from './useWeb3';
 import { useContract } from './useContract';
 import { UserSupply } from '@/types';
-import { TOKEN_CONFIGS } from '@/lib/contracts';
+import { TOKEN_CONFIGS, CHAIN_ID } from '@/lib/contracts';
 import { formatUnits } from 'ethers';
 import { bpsToPercent } from '@/lib/utils';
 
 export function useUserSupplies() {
-  const { account, isConnected } = useWeb3();
+  const { account, isConnected, chainId } = useWeb3();
   const lendingPool = useContract('LendingPool');
 
   const { data, error, isLoading, mutate } = useSWR(
-    isConnected && account && lendingPool ? ['userSupplies', account] : null,
+    isConnected && account && lendingPool && chainId === CHAIN_ID ? ['userSupplies', account] : null,
     async () => {
       const supplies: UserSupply[] = [];
 
       for (const tokenConfig of Object.values(TOKEN_CONFIGS)) {
         try {
+          if (!tokenConfig.address) continue;
           if (!lendingPool) continue;
 
-          // Get user deposit
+          // 1. Defensive Check: Is the token active?
+          let isActive = false;
+          try {
+            const poolConfig = await lendingPool.tokenConfigs(tokenConfig.address);
+            isActive = poolConfig.isActive;
+          } catch (configError) {
+            // Silently fail for user supplies if config check fails
+            continue;
+          }
+
+          if (!isActive) continue;
+
+          // 2. Get user deposit
           const deposit = await lendingPool.getUserDeposit(account, tokenConfig.address);
           
           if (deposit === BigInt(0)) continue; // Skip if no deposit
 
-          // Get supply APY
+          // 3. Get supply APY
           const supplyRate = await lendingPool.getSupplyRate(tokenConfig.address);
           const supplyAPY = bpsToPercent(supplyRate);
 

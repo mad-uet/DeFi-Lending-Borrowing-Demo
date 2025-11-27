@@ -2,10 +2,32 @@
 
 import { useWeb3 } from '@/hooks/useWeb3';
 import { truncateAddress } from '@/lib/utils';
-import { CHAIN_NAMES } from '@/lib/contracts';
+import { CHAIN_NAMES, CHAIN_ID } from '@/lib/contracts';
 
 export default function WalletConnect() {
-  const { account, isConnected, chainId, connect, disconnect } = useWeb3();
+  const { account, isConnected, chainId, connect, disconnect, switchNetwork } = useWeb3();
+
+  if (isConnected && chainId !== CHAIN_ID) {
+    return (
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+          <span className="text-sm font-medium">Wrong Network</span>
+        </div>
+        <button
+          onClick={() => switchNetwork?.()}
+          className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
+        >
+          Switch to {CHAIN_NAMES[CHAIN_ID]}
+        </button>
+        <button
+          onClick={disconnect}
+          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+        >
+          Disconnect
+        </button>
+      </div>
+    );
+  }
 
   if (isConnected && account) {
     return (

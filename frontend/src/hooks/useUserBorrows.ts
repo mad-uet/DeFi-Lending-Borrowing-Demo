@@ -4,16 +4,16 @@ import useSWR from 'swr';
 import { useWeb3 } from './useWeb3';
 import { useContract } from './useContract';
 import { UserBorrow } from '@/types';
-import { TOKEN_CONFIGS } from '@/lib/contracts';
+import { TOKEN_CONFIGS, CHAIN_ID } from '@/lib/contracts';
 import { formatUnits } from 'ethers';
 import { bpsToPercent } from '@/lib/utils';
 
 export function useUserBorrows() {
-  const { account, isConnected } = useWeb3();
+  const { account, isConnected, chainId } = useWeb3();
   const lendingPool = useContract('LendingPool');
 
   const { data, error, isLoading, mutate } = useSWR(
-    isConnected && account && lendingPool ? ['userBorrows', account] : null,
+    isConnected && account && lendingPool && chainId === CHAIN_ID ? ['userBorrows', account] : null,
     async () => {
       const borrows: UserBorrow[] = [];
 

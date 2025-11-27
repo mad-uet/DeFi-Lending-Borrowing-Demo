@@ -56,6 +56,8 @@ describe("Interest Accrual Scenarios", function () {
       priceOracle,
       weth,
       dai,
+      wethPriceFeed,
+      daiPriceFeed,
       owner,
       user1,
       user2,
@@ -73,23 +75,23 @@ describe("Interest Accrual Scenarios", function () {
       await lendingPool.connect(user2).deposit(await weth.getAddress(), wethSupply);
 
       // User 1 deposits DAI as collateral
-      const daiAmount = ethers.parseEther("200000"); // $200,000
+      const daiAmount = ethers.parseEther("250000"); // $250,000
       await dai.mint(user1.address, daiAmount);
       await dai.connect(user1).approve(await lendingPool.getAddress(), daiAmount);
       await lendingPool.connect(user1).deposit(await dai.getAddress(), daiAmount);
 
       // Record initial rate (0% utilization)
-      const initialRate = await interestRateModel.calculateBorrowRate(wethSupply, 0n);
-      expect(initialRate).to.equal(200); // 2% base rate (200 basis points)
+      const initialRate = await interestRateModel.calculateBorrowRate(0n, wethSupply);
+      expect(initialRate).to.equal(0); // 0% base rate
 
       // Borrow to reach 50% utilization
       const borrow50Percent = ethers.parseEther("50");
       await lendingPool.connect(user1).borrow(await weth.getAddress(), borrow50Percent);
 
-      const rate50 = await interestRateModel.calculateBorrowRate(wethSupply, borrow50Percent);
+      const rate50 = await interestRateModel.calculateBorrowRate(borrow50Percent, wethSupply);
       
-      // At 50% utilization: 2% + (50% * 8%) = 2% + 4% = 6% = 600 basis points
-      expect(rate50).to.equal(600);
+      // At 50% utilization: 0% + (50/80 * 4%) = 2.5% = 250 basis points
+      expect(rate50).to.equal(250);
       expect(rate50).to.be.gt(initialRate);
 
       // Borrow more to reach 90% utilization
@@ -97,11 +99,11 @@ describe("Interest Accrual Scenarios", function () {
       await lendingPool.connect(user1).borrow(await weth.getAddress(), additionalBorrow);
 
       const totalBorrows = borrow50Percent + additionalBorrow;
-      const rate90 = await interestRateModel.calculateBorrowRate(wethSupply, totalBorrows);
+      const rate90 = await interestRateModel.calculateBorrowRate(totalBorrows, wethSupply);
 
-      // At 90% utilization (above optimal 80%), rate jumps significantly
-      // 2% + (80% * 8%) + ((90% - 80%) * 150%) = 2% + 6.4% + 15% = 23.4% = 2340 basis points
-      expect(rate90).to.equal(2540); // 25.4%
+      // At 90% utilization (above optimal 80%):
+      // 4% + ((90% - 80%) * 60%) / 20% = 4% + 30% = 34% = 3400 basis points
+      expect(rate90).to.equal(3400);
       expect(rate90).to.be.gt(rate50);
     });
 
@@ -123,8 +125,8 @@ describe("Interest Accrual Scenarios", function () {
       const borrowAmount = ethers.parseEther("80");
       await lendingPool.connect(user1).borrow(await weth.getAddress(), borrowAmount);
 
-      const highRate = await interestRateModel.calculateBorrowRate(wethSupply, borrowAmount);
-      expect(highRate).to.equal(1000); // 10% at 80% utilization
+      const highRate = await interestRateModel.calculateBorrowRate(borrowAmount, wethSupply);
+      expect(highRate).to.equal(400); // 4% at 80% utilization
 
       // User 1 repays 40 WETH (reduces to 40% utilization)
       const repayAmount = ethers.parseEther("40");
@@ -133,17 +135,17 @@ describe("Interest Accrual Scenarios", function () {
       await lendingPool.connect(user1).repay(await weth.getAddress(), repayAmount);
 
       const remainingBorrows = borrowAmount - repayAmount;
-      const lowRate = await interestRateModel.calculateBorrowRate(wethSupply, remainingBorrows);
+      const lowRate = await interestRateModel.calculateBorrowRate(remainingBorrows, wethSupply);
 
-      // At 40% utilization: 2% + (40% * 8%) = 5.2% = 520 basis points
-      expect(lowRate).to.equal(520);
+      // At 40% utilization: (40/80 * 4%) = 2% = 200 basis points
+      expect(lowRate).to.equal(200);
       expect(lowRate).to.be.lt(highRate);
     });
   });
 
   describe("Time-Based Interest Accrual", function () {
     it("Should demonstrate interest accrual concept over time", async function () {
-      const { lendingPool, weth, dai, user1, user2 } = await loadFixture(deployLendingPoolFixture);
+      const { lendingPool, weth, dai, user1, user2, wethPriceFeed, daiPriceFeed } = await loadFixture(deployLendingPoolFixture);
 
       // Setup lending scenario
       const wethSupply = ethers.parseEther("100");
@@ -166,6 +168,10 @@ describe("Interest Accrual Scenarios", function () {
 
       // Fast-forward time by 1 year
       await time.increase(365 * 24 * 60 * 60);
+      
+      // Update prices to prevent staleness
+      await wethPriceFeed.updateAnswer(200000000000);
+      await daiPriceFeed.updateAnswer(100000000);
 
       // Note: In this implementation, interest is calculated at the time of interaction
       // For a full implementation, you would need to implement compound interest tracking
@@ -174,15 +180,10 @@ describe("Interest Accrual Scenarios", function () {
       // The borrowed amount remains the same until repay/withdrawal triggers interest calculation
       const afterTimeBorrow = await lendingPool.userReserves(user1.address, await weth.getAddress());
       expect(afterTimeBorrow.borrowed).to.equal(borrowAmount);
-
-      // In a production system with compound interest:
-      // - Interest would accrue per block
-      // - Principal would increase over time
-      // - Health factor would gradually decrease
     });
 
     it("Should maintain correct state across multiple time periods", async function () {
-      const { lendingPool, weth, dai, user1, user2 } = await loadFixture(deployLendingPoolFixture);
+      const { lendingPool, weth, dai, user1, user2, wethPriceFeed, daiPriceFeed } = await loadFixture(deployLendingPoolFixture);
 
       // Setup
       const wethSupply = ethers.parseEther("100");
@@ -201,6 +202,10 @@ describe("Interest Accrual Scenarios", function () {
 
       // Period 1: 30 days
       await time.increase(30 * 24 * 60 * 60);
+      
+      // Update prices
+      await wethPriceFeed.updateAnswer(200000000000);
+      await daiPriceFeed.updateAnswer(100000000);
 
       // Make a transaction (triggers any interest calculations)
       const smallDeposit = ethers.parseEther("1");
@@ -210,6 +215,10 @@ describe("Interest Accrual Scenarios", function () {
 
       // Period 2: Another 30 days
       await time.increase(30 * 24 * 60 * 60);
+      
+      // Update prices
+      await wethPriceFeed.updateAnswer(200000000000);
+      await daiPriceFeed.updateAnswer(100000000);
 
       // Verify state is still consistent
       const borrowData = await lendingPool.userReserves(user1.address, await weth.getAddress());
@@ -241,21 +250,18 @@ describe("Interest Accrual Scenarios", function () {
       const borrowAmount = ethers.parseEther("95"); // $190,000
       await lendingPool.connect(user1).borrow(await weth.getAddress(), borrowAmount);
 
-      // Get borrow APY at 50% utilization
-      const borrowAPY = await interestRateModel.calculateBorrowRate(wethSupply, borrowAmount);
-      expect(borrowAPY).to.equal(600); // 6% borrow APY
+      // Get borrow APY at 95% utilization
+      const borrowAPY = await interestRateModel.calculateBorrowRate(borrowAmount, wethSupply);
+      
+      // At 95% utilization: 4% + ((95-80)/20 * 60%) = 4% + 45% = 49% = 4900 bps
+      expect(borrowAPY).to.equal(4900); 
 
       // Supply APY = Borrow APY × Utilization
-      // Supply APY = 6% × 50% = 3%
-      // In basis points: 600 × 5000 / 10000 = 300
-      const utilization = (borrowAmount * 10000n) / wethSupply; // 5000 = 50%
+      // Supply APY = 49% × 95% = 46.55%
+      // In basis points: 4900 × 9500 / 10000 = 4655
+      const utilization = (borrowAmount * 10000n) / wethSupply; // 9500 = 95%
       const supplyAPY = (borrowAPY * utilization) / 10000n;
-      expect(supplyAPY).to.equal(300); // 3% supply APY
-
-      // This demonstrates that:
-      // - Lenders earn 3% on their deposits
-      // - Borrowers pay 6% on their loans
-      // - The 3% spread covers protocol costs (in a real system)
+      expect(supplyAPY).to.equal(4655);
     });
   });
 
@@ -270,8 +276,8 @@ describe("Interest Accrual Scenarios", function () {
       await lendingPool.connect(user2).deposit(await weth.getAddress(), wethSupply);
 
       // Interest rate at 0% utilization
-      const rate = await interestRateModel.calculateInterestRate(wethSupply, 0);
-      expect(rate).to.equal(200); // Base rate: 2%
+      const rate = await interestRateModel.calculateBorrowRate(0, wethSupply);
+      expect(rate).to.equal(0); // Base rate: 0%
 
       // Supply APY would be 0% (no one borrowing)
       const supplyAPY = (rate * 0n) / 10000n;
@@ -287,7 +293,9 @@ describe("Interest Accrual Scenarios", function () {
       await weth.connect(user2).approve(await lendingPool.getAddress(), wethSupply);
       await lendingPool.connect(user2).deposit(await weth.getAddress(), wethSupply);
 
-      const daiAmount = ethers.parseEther("200000");
+      // Need sufficient collateral for 95 WETH borrow ($190,000)
+      // Required: $190,000 / 0.8 = $237,500. Let's put $300,000
+      const daiAmount = ethers.parseEther("300000");
       await dai.mint(user1.address, daiAmount);
       await dai.connect(user1).approve(await lendingPool.getAddress(), daiAmount);
       await lendingPool.connect(user1).deposit(await dai.getAddress(), daiAmount);
@@ -297,15 +305,10 @@ describe("Interest Accrual Scenarios", function () {
       await lendingPool.connect(user1).borrow(await weth.getAddress(), borrowAmount);
 
       // Rate should be very high to discourage further borrowing
-      const rate = await interestRateModel.calculateInterestRate(wethSupply, borrowAmount);
+      const rate = await interestRateModel.calculateBorrowRate(borrowAmount, wethSupply);
       
-      // At 95%: 2% + (80% * 8%) + ((95% - 80%) * 150%) = 2% + 6.4% + 22.5% = 30.9%
-      expect(rate).to.be.gt(3000); // Greater than 30%
-
-      // This high rate protects lenders by:
-      // 1. Discouraging more borrowing
-      // 2. Incentivizing repayment
-      // 3. Attracting more suppliers
+      // At 95%: 49%
+      expect(rate).to.equal(4900);
     });
   });
 });

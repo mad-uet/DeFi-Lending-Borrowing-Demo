@@ -4,34 +4,49 @@ import useSWR from 'swr';
 import { useWeb3 } from './useWeb3';
 import { useContract } from './useContract';
 import { SupplyAsset } from '@/types';
-import { TOKEN_CONFIGS } from '@/lib/contracts';
-import { formatUnits } from 'ethers';
+import { TOKEN_CONFIGS, CHAIN_ID } from '@/lib/contracts';
+import { formatUnits, Contract } from 'ethers';
 import { bpsToPercent } from '@/lib/utils';
 
 export function useSupplyAssets() {
-  const { account, isConnected } = useWeb3();
+  const { account, isConnected, provider, chainId } = useWeb3();
   const lendingPool = useContract('LendingPool');
 
   const { data, error, isLoading, mutate } = useSWR(
-    isConnected && lendingPool ? ['supplyAssets', account] : null,
+    isConnected && lendingPool && chainId === CHAIN_ID ? ['supplyAssets', account] : null,
     async () => {
       const assets: SupplyAsset[] = [];
 
       for (const tokenConfig of Object.values(TOKEN_CONFIGS)) {
         try {
-          // Get token contract
-          const tokenContract = useContract('ERC20', tokenConfig.address);
-          if (!tokenContract || !lendingPool) continue;
+          if (!tokenConfig.address) continue;
+          if (!provider || !lendingPool) continue;
 
-          // Get wallet balance
+          // 1. Defensive Check: Is the token active?
+          // If this call fails, the LendingPool address is likely wrong or the Proxy is uninitialized.
+          let isActive = false;
+          try {
+            const poolConfig = await lendingPool.tokenConfigs(tokenConfig.address);
+            isActive = poolConfig.isActive;
+          } catch (configError) {
+            console.warn(`Failed to fetch config for ${tokenConfig.symbol}. Check LendingPool address.`, configError);
+            continue; // Skip this token
+          }
+
+          if (!isActive) continue;
+
+          // 2. Get token contract
+          const tokenContract = new Contract(tokenConfig.address, ['function balanceOf(address) view returns (uint256)'], provider);
+
+          // 3. Get wallet balance
           const walletBalance = account
             ? await tokenContract.balanceOf(account)
             : BigInt(0);
 
-          // Get total supplied to pool
+          // 4. Get total supplied to pool
           const totalSupplied = await lendingPool.getTokenBalance(tokenConfig.address);
 
-          // Get supply APY
+          // 5. Get supply APY
           const supplyRate = await lendingPool.getSupplyRate(tokenConfig.address);
           const supplyAPY = bpsToPercent(supplyRate);
 
@@ -78,15 +93,4 @@ export function useSupplyAssets() {
     error,
     mutate,
   };
-}
-
-// Helper hook to create contract instance
-function useContract(contractName: 'ERC20', address: string) {
-  const { provider } = useWeb3();
-  if (!provider || !address) return null;
-  
-  const Contract = require('ethers').Contract;
-  const ERC20_ABI = require('@/lib/contracts').ERC20_ABI;
-  
-  return new Contract(address, ERC20_ABI, provider);
 }
