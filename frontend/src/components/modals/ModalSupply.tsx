@@ -9,6 +9,7 @@ import { useTransactionNotifications } from '@/hooks/useNotifications';
 import { formatTokenAmount, formatUSD, parseTokenAmount } from '@/lib/utils';
 import { ADDRESSES } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
+import { ApprovalTransactionProgress, useTransactionProgress } from '@/components/ui/TransactionProgress';
 import toast from 'react-hot-toast';
 import { parseUnits } from 'ethers';
 
@@ -26,6 +27,7 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
     status: 'idle',
     message: '',
   });
+  const txProgress = useTransactionProgress();
 
   const handleSupply = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -45,6 +47,8 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
       const amountWei = parseUnits(amount, asset.decimals);
 
       // Step 1: Approve
+      txProgress.startTransaction();
+      txProgress.setApproving();
       setStatus({ status: 'approving', message: 'Approving tokens...' });
       const tokenContract = new Contract(asset.address, ERC20_ABI, signer);
       
@@ -58,15 +62,21 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
         toast.success('Tokens approved!', { id: 'approve' });
       }
 
-      // Step 2: Deposit
+      // Step 2: Confirm deposit
+      txProgress.setConfirming();
       setStatus({ status: 'pending', message: 'Depositing tokens...' });
       const lendingPoolContract = new Contract(ADDRESSES.LendingPool, LENDING_POOL_ABI, signer);
       
       const depositTx = await lendingPoolContract.deposit(asset.address, amountWei);
+      
+      // Step 3: Executing
+      txProgress.setExecuting(depositTx.hash);
       toast.loading('Depositing tokens...', { id: 'deposit' });
       
       const receipt = await depositTx.wait();
       
+      // Step 4: Complete
+      txProgress.complete(receipt.hash);
       setStatus({
         status: 'success',
         message: `Successfully deposited ${amount} ${asset.symbol}!`,
@@ -82,6 +92,7 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
       }, 2000);
     } catch (error: any) {
       console.error('Supply error:', error);
+      txProgress.fail(error.message || 'Transaction failed');
       setStatus({
         status: 'error',
         message: error.message || 'Transaction failed',
@@ -199,21 +210,48 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
             </div>
           </div>
 
-          {/* Status message */}
-          {status.status !== 'idle' && (
-            <div className={`p-3 rounded-lg ${
-              status.status === 'success' ? 'bg-green-50 text-green-800' :
-              status.status === 'error' ? 'bg-red-50 text-red-800' :
-              'bg-blue-50 text-blue-800'
-            }`}>
-              {status.status === 'approving' || status.status === 'pending' ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                  <span>{status.message}</span>
-                </div>
-              ) : (
-                <span>{status.message}</span>
-              )}
+          {/* Status message with Transaction Progress */}
+          {txProgress.isInProgress && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <ApprovalTransactionProgress
+                phase={txProgress.phase}
+                txHash={txProgress.txHash}
+                errorMessage={txProgress.errorMessage}
+                onCancel={() => {
+                  txProgress.reset();
+                  setStatus({ status: 'idle', message: '' });
+                }}
+                size="sm"
+              />
+            </div>
+          )}
+          
+          {txProgress.isComplete && (
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <ApprovalTransactionProgress
+                phase={txProgress.phase}
+                txHash={txProgress.txHash}
+                size="sm"
+              />
+            </div>
+          )}
+          
+          {txProgress.isError && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <ApprovalTransactionProgress
+                phase={txProgress.phase}
+                errorMessage={txProgress.errorMessage}
+                size="sm"
+              />
+              <button
+                onClick={() => {
+                  txProgress.reset();
+                  setStatus({ status: 'idle', message: '' });
+                }}
+                className="mt-3 w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           )}
 
@@ -224,11 +262,12 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
               !amount ||
               parseFloat(amount) <= 0 ||
               parseFloat(amount) > parseFloat(asset.walletBalance) ||
-              status.status !== 'idle'
+              txProgress.isInProgress ||
+              txProgress.isComplete
             }
             className="w-full px-6 py-4 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] disabled:transform-none text-lg"
           >
-            {status.status === 'idle' ? 'Supply' : status.status === 'success' ? '✓ Success' : 'Processing...'}
+            {txProgress.phase === 'idle' ? 'Supply' : txProgress.isComplete ? '✓ Success' : 'Processing...'}
           </button>
         </div>
       </div>
