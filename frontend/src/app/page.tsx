@@ -11,6 +11,9 @@ import HealthFactor from '@/components/HealthFactor';
 import Faucet from '@/components/Faucet';
 import ClientOnly from '@/components/ClientOnly';
 import NotificationCenter from '@/components/ui/NotificationCenter';
+import DashboardStats from '@/components/DashboardStats';
+import QuickActions from '@/components/QuickActions';
+import PositionSummary from '@/components/PositionSummary';
 import { LiquidationWarningBanner } from '@/components/LiquidationWarning';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { EducationalToggle, EducationalBadge, EducationalPanel } from '@/components/educational';
@@ -147,9 +150,22 @@ export default function Home() {
                 <LiquidationWarningBanner />
               </div>
 
+              {/* Dashboard Stats - Full Width */}
+              <div className={isEducationalMode ? 'lg:col-span-4' : 'lg:col-span-3'}>
+                <DashboardStats />
+              </div>
+
               {/* Left Sidebar */}
               <div className="lg:col-span-1 space-y-6">
                 <HealthFactor />
+
+                {/* Quick Actions */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                  <QuickActions 
+                    onSupply={() => setActiveTab('supply')}
+                    onBorrow={() => setActiveTab('borrow')}
+                  />
+                </div>
                 
                 {/* Transaction History Card */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
@@ -160,7 +176,7 @@ export default function Home() {
               </div>
 
               {/* Main Content */}
-              <div className="lg:col-span-2">
+              <div className={`${isEducationalMode ? 'lg:col-span-2' : 'lg:col-span-2'}`}>
                 {/* Tabs */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6">
                   <div className="flex border-b border-gray-200 dark:border-gray-700">
@@ -172,7 +188,7 @@ export default function Home() {
                           : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                       }`}
                     >
-                      Supply
+                      📥 Supply
                     </button>
                     <button
                       onClick={() => setActiveTab('borrow')}
@@ -182,7 +198,7 @@ export default function Home() {
                           : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                       }`}
                     >
-                      Borrow
+                      💰 Borrow
                     </button>
                   </div>
                 </div>
@@ -199,6 +215,11 @@ export default function Home() {
                     <YourBorrows />
                   </>
                 )}
+
+                {/* Position Summary */}
+                <div className="mt-6">
+                  <PositionSummary />
+                </div>
               </div>
 
               {/* Educational Panel - Right Sidebar (only when enabled) */}
