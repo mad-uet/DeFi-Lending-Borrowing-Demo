@@ -13,11 +13,15 @@ import ClientOnly from '@/components/ClientOnly';
 import NotificationCenter from '@/components/ui/NotificationCenter';
 import { LiquidationWarningBanner } from '@/components/LiquidationWarning';
 import { TransactionHistory } from '@/components/TransactionHistory';
+import { EducationalToggle, EducationalBadge, EducationalPanel } from '@/components/educational';
+import { EducationalFloatingToggle } from '@/components/educational/EducationalToggle';
 import { useWeb3 } from '@/hooks/useWeb3';
+import { useEducationalMode } from '@/hooks/useEducationalMode';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'supply' | 'borrow'>('supply');
   const { isConnected } = useWeb3();
+  const { isEnabled: isEducationalMode } = useEducationalMode();
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -62,6 +66,8 @@ export default function Home() {
             </div>
             <ClientOnly>
               <div className="flex items-center gap-3">
+                <EducationalBadge />
+                <EducationalToggle size="sm" />
                 <div className="relative">
                   <NotificationCenter />
                 </div>
@@ -135,9 +141,9 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`grid gap-6 ${isEducationalMode ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1 lg:grid-cols-3'}`}>
               {/* Liquidation Warning Banner - Full Width */}
-              <div className="lg:col-span-3">
+              <div className={isEducationalMode ? 'lg:col-span-4' : 'lg:col-span-3'}>
                 <LiquidationWarningBanner />
               </div>
 
@@ -194,10 +200,22 @@ export default function Home() {
                   </>
                 )}
               </div>
+
+              {/* Educational Panel - Right Sidebar (only when enabled) */}
+              {isEducationalMode && (
+                <div className="lg:col-span-1">
+                  <EducationalPanel />
+                </div>
+              )}
             </div>
           )}
         </ClientOnly>
       </div>
+
+      {/* Floating Educational Toggle */}
+      <ClientOnly>
+        <EducationalFloatingToggle />
+      </ClientOnly>
 
       {/* Footer */}
       <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-20">

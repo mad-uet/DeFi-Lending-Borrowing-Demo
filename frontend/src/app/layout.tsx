@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Web3Provider } from '@/hooks/useWeb3'
 import { NotificationProvider } from '@/hooks/useNotifications'
+import { EducationalModeProvider } from '@/hooks/useEducationalMode'
 import { ToastContainer } from '@/components/ui/NotificationCenter'
 import { Toaster } from 'react-hot-toast'
 
@@ -23,30 +24,32 @@ export default function RootLayout({
       <body className={inter.className}>
         <Web3Provider>
           <NotificationProvider>
-            {children}
-            <ToastContainer />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#22c55e',
-                    secondary: '#fff',
+            <EducationalModeProvider>
+              {children}
+              <ToastContainer />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#363636',
+                    color: '#fff',
                   },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
+                  success: {
+                    iconTheme: {
+                      primary: '#22c55e',
+                      secondary: '#fff',
+                    },
                   },
-                },
-              }}
-            />
+                  error: {
+                    iconTheme: {
+                      primary: '#ef4444',
+                      secondary: '#fff',
+                    },
+                  },
+                }}
+              />
+            </EducationalModeProvider>
           </NotificationProvider>
         </Web3Provider>
       </body>
