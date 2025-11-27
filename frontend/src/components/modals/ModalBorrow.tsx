@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import { BorrowAsset, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { formatTokenAmount, calculateNewHealthFactor } from '@/lib/utils';
+import { useUserAccountData } from '@/hooks/useUserAccountData';
+import { useTransactionNotifications } from '@/hooks/useNotifications';
+import { formatTokenAmount } from '@/lib/utils';
 import { ADDRESSES } from '@/lib/contracts';
+import TransactionPreview from '@/components/ui/TransactionPreview';
 import toast from 'react-hot-toast';
 import { parseUnits } from 'ethers';
 
@@ -15,7 +18,10 @@ interface ModalBorrowProps {
 
 export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
   const { account, signer } = useWeb3();
+  const { accountData } = useUserAccountData();
+  const { notifyTransactionSuccess, notifyTransactionError, notifyLiquidationRisk } = useTransactionNotifications();
   const [amount, setAmount] = useState('');
+  const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
   const [status, setStatus] = useState<TransactionStatus>({
     status: 'idle',
     message: '',
@@ -29,6 +35,12 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
 
     if (!signer || !account) {
       toast.error('Please connect your wallet');
+      return;
+    }
+
+    // Check if user acknowledged risk for risky transactions
+    if (isRisky && !acknowledgeRisk) {
+      toast.error('Please acknowledge the risk before proceeding');
       return;
     }
 
@@ -53,6 +65,12 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
       });
       
       toast.success(`Successfully borrowed ${amount} ${asset.symbol}!`, { id: 'borrow' });
+      notifyTransactionSuccess('Borrow', asset.symbol, amount, receipt.hash);
+
+      // Alert if new position is risky
+      if (newHealthFactor < 1.2 && isFinite(newHealthFactor)) {
+        notifyLiquidationRisk(newHealthFactor);
+      }
       
       setTimeout(() => {
         onClose();
@@ -65,6 +83,7 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
         error: error.message,
       });
       toast.error(error.message || 'Transaction failed', { id: 'borrow' });
+      notifyTransactionError('Borrow', error.message || 'Transaction failed');
     }
   };
 
@@ -78,114 +97,182 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
   const price = mockPrices[asset.symbol] || 0;
   const usdValue = amount ? (parseFloat(amount) * price).toFixed(2) : '0.00';
 
-  // Mock health factor calculation
-  const totalCollateralUSD = 10000; // Mock
-  const currentBorrowUSD = parseFloat(asset.yourBorrowsUSD);
-  const newBorrowUSD = parseFloat(usdValue);
-  const newHealthFactor = calculateNewHealthFactor(
-    totalCollateralUSD,
-    currentBorrowUSD,
-    newBorrowUSD,
-    0.80
-  );
+  // Calculate new health factor using real account data
+  const { totalCollateralUSD, totalBorrowsUSD, ltv } = accountData;
+  const newBorrowUSD = parseFloat(usdValue) || 0;
+  const newTotalBorrowsUSD = totalBorrowsUSD + newBorrowUSD;
+  
+  // Health Factor = (Collateral * LTV) / Total Borrows
+  let newHealthFactor = Infinity;
+  if (newTotalBorrowsUSD > 0) {
+    newHealthFactor = (totalCollateralUSD * ltv) / newTotalBorrowsUSD;
+  }
 
-  const isRisky = newHealthFactor < 1.2;
+  // Current health factor for display
+  let currentHealthFactor = Infinity;
+  if (totalBorrowsUSD > 0) {
+    currentHealthFactor = (totalCollateralUSD * ltv) / totalBorrowsUSD;
+  }
+
+  const isRisky = newHealthFactor < 1.2 && isFinite(newHealthFactor);
+  const isLiquidationRisk = newHealthFactor < 1.0 && isFinite(newHealthFactor);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Borrow {asset.symbol}</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <span className="text-2xl">💰</span>
+            Borrow {asset.symbol}
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 hover:text-gray-700 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             disabled={status.status === 'pending'}
           >
             ×
           </button>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">Amount</label>
-          <div className="relative">
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.0"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              disabled={status.status !== 'idle'}
-            />
-            <button
-              onClick={() => setAmount(asset.maxBorrow)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 rounded text-sm font-semibold hover:bg-primary-200 dark:hover:bg-primary-800"
-              disabled={status.status !== 'idle'}
-            >
-              MAX
-            </button>
+        <div className="p-6 space-y-6">
+          {/* Amount input */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Amount to Borrow</label>
+            <div className="relative">
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  setAcknowledgeRisk(false); // Reset acknowledgment when amount changes
+                }}
+                placeholder="0.0"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                disabled={status.status !== 'idle'}
+              />
+              <button
+                onClick={() => setAmount(asset.maxBorrow)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 rounded text-sm font-semibold hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                disabled={status.status !== 'idle'}
+              >
+                MAX
+              </button>
+            </div>
+            <div className="flex justify-between mt-2 text-sm text-gray-500">
+              <span>≈ ${usdValue}</span>
+              <span>
+                Max: {formatTokenAmount(asset.maxBorrow, asset.decimals)} {asset.symbol}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between mt-2 text-sm text-gray-500">
-            <span>≈ ${usdValue}</span>
-            <span>
-              Max: {formatTokenAmount(asset.maxBorrow, asset.decimals)} {asset.symbol}
-            </span>
-          </div>
-        </div>
 
-        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Borrow APY</span>
-            <span className="font-semibold text-red-600">{asset.borrowAPY}%</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>New Health Factor</span>
-            <span className={`font-semibold ${
-              newHealthFactor >= 1.5 ? 'text-green-600' :
-              newHealthFactor >= 1.0 ? 'text-yellow-600' :
-              'text-red-600'
-            }`}>
-              {newHealthFactor.toFixed(2)}
-            </span>
-          </div>
-        </div>
-
-        {isRisky && amount && parseFloat(amount) > 0 && (
-          <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              ⚠️ Warning: This borrow will put your health factor below 1.2. Consider borrowing less to maintain a safe position.
-            </p>
-          </div>
-        )}
-
-        {status.status !== 'idle' && (
-          <div className={`mb-4 p-3 rounded-lg ${
-            status.status === 'success' ? 'bg-green-50 text-green-800' :
-            status.status === 'error' ? 'bg-red-50 text-red-800' :
-            'bg-blue-50 text-blue-800'
-          }`}>
-            {status.status === 'pending' ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                <span>{status.message}</span>
-              </div>
-            ) : (
-              <span>{status.message}</span>
+          {/* Transaction Preview */}
+          <TransactionPreview
+            type="borrow"
+            amount={amount}
+            symbol={asset.symbol}
+            decimals={asset.decimals}
+            currentHealthFactor={currentHealthFactor}
+            newHealthFactor={newHealthFactor}
+            currentWalletBalance="0" // Would be fetched from wallet
+            currentPoolBalance={asset.availableToBorrow}
+            currentBorrowed={asset.yourBorrows}
+            gasEstimate="~0.005 ETH"
+          >
+            {/* Risk acknowledgment checkbox */}
+            {isRisky && parseFloat(amount) > 0 && (
+              <label className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer mt-4">
+                <input
+                  type="checkbox"
+                  checked={acknowledgeRisk}
+                  onChange={(e) => setAcknowledgeRisk(e.target.checked)}
+                  className="mt-1 w-5 h-5 rounded border-red-300 text-red-600 focus:ring-red-500"
+                />
+                <span className="text-sm text-red-800 dark:text-red-200">
+                  <strong>I understand the risks.</strong> I acknowledge that this transaction will put my 
+                  position at {isLiquidationRisk ? 'immediate liquidation' : 'high'} risk and I may lose 
+                  my collateral if market conditions change.
+                </span>
+              </label>
             )}
-          </div>
-        )}
+          </TransactionPreview>
 
-        <button
-          onClick={handleBorrow}
-          disabled={
-            !amount ||
-            parseFloat(amount) <= 0 ||
-            parseFloat(amount) > parseFloat(asset.maxBorrow) ||
-            status.status !== 'idle'
-          }
-          className="w-full px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
-        >
-          {status.status === 'idle' ? 'Borrow' : status.status === 'success' ? '✓ Success' : 'Processing...'}
-        </button>
+          {/* Info section */}
+          <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Borrow APY</span>
+              <span className="font-semibold text-red-600">{asset.borrowAPY}%</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Available Liquidity</span>
+              <span className="font-semibold">
+                {formatTokenAmount(asset.availableToBorrow, asset.decimals)} {asset.symbol}
+              </span>
+            </div>
+          </div>
+
+          {/* Liquidity warnings */}
+          {parseFloat(asset.availableToBorrow) === 0 && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                ❌ No liquidity available. This asset has no deposits in the pool to borrow from.
+              </p>
+            </div>
+          )}
+
+          {amount && parseFloat(amount) > parseFloat(asset.availableToBorrow) && parseFloat(asset.availableToBorrow) > 0 && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                ❌ Insufficient liquidity. Only {formatTokenAmount(asset.availableToBorrow, asset.decimals)} {asset.symbol} available in the pool.
+              </p>
+            </div>
+          )}
+
+          {/* Status message */}
+          {status.status !== 'idle' && (
+            <div className={`p-3 rounded-lg ${
+              status.status === 'success' ? 'bg-green-50 text-green-800' :
+              status.status === 'error' ? 'bg-red-50 text-red-800' :
+              'bg-blue-50 text-blue-800'
+            }`}>
+              {status.status === 'pending' ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>{status.message}</span>
+                </div>
+              ) : (
+                <span>{status.message}</span>
+              )}
+            </div>
+          )}
+
+          {/* Action button */}
+          <button
+            onClick={handleBorrow}
+            disabled={
+              !amount ||
+              parseFloat(amount) <= 0 ||
+              parseFloat(amount) > parseFloat(asset.maxBorrow) ||
+              parseFloat(amount) > parseFloat(asset.availableToBorrow) ||
+              (isRisky && !acknowledgeRisk) ||
+              status.status !== 'idle'
+            }
+            className={`w-full px-6 py-4 font-semibold rounded-lg transition-all transform hover:scale-[1.02] ${
+              isLiquidationRisk 
+                ? 'bg-red-500 hover:bg-red-600 disabled:bg-gray-300' 
+                : 'bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300'
+            } disabled:cursor-not-allowed disabled:transform-none text-white text-lg`}
+          >
+            {status.status === 'idle' 
+              ? isLiquidationRisk 
+                ? '⚠️ Borrow (High Risk)' 
+                : 'Borrow' 
+              : status.status === 'success' 
+                ? '✓ Success' 
+                : 'Processing...'}
+          </button>
+        </div>
       </div>
     </div>
   );

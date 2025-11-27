@@ -246,9 +246,9 @@ const ConfigDisplay = () => {
 };
 
 export default function StatusPage() {
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const { isRunning, lastRun, categories, logs, runDiagnostics, clearLogs } = useDiagnostics(
-    autoRefresh ? 5000 : undefined
+    autoRefresh ? 10000 : undefined
   );
 
   const overallStatus: DiagnosticStatus = categories.some((c) => c.status === 'error')

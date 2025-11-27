@@ -55,9 +55,17 @@ export default function SupplyAssets() {
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <span className="text-green-600 font-semibold">
-                    {formatAPY(parseFloat(asset.supplyAPY))}
-                  </span>
+                  <div className="group relative inline-block">
+                    <span className="text-green-600 font-semibold">
+                      {formatAPY(parseFloat(asset.supplyAPY))}
+                    </span>
+                    {parseFloat(asset.supplyAPY) === 0 && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        No borrows yet = No interest earned
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="text-right py-4 px-4">
                   <div>{formatTokenAmount(asset.totalSupplied, asset.decimals)} {asset.symbol}</div>

@@ -79,13 +79,22 @@ export default function BorrowAssets() {
                   </div>
                 </td>
                 <td className="text-center py-4 px-4">
-                  <button
-                    onClick={() => setSelectedAsset(asset.address)}
-                    disabled={parseFloat(asset.maxBorrow) === 0}
-                    className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                  >
-                    Borrow
-                  </button>
+                  {parseFloat(asset.availableToBorrow) === 0 ? (
+                    <span className="px-4 py-2 text-sm text-gray-500 italic">
+                      No Liquidity
+                    </span>
+                  ) : parseFloat(asset.maxBorrow) === 0 ? (
+                    <span className="px-4 py-2 text-sm text-gray-500 italic">
+                      No Collateral
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedAsset(asset.address)}
+                      className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                    >
+                      Borrow
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

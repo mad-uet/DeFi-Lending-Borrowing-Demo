@@ -273,6 +273,107 @@ contract LendingPool is ILendingPool, Ownable {
         emit TokenDeactivated(token);
     }
 
+    // View functions for frontend
+
+    /**
+     * @notice Get number of supported tokens
+     * @return Number of supported tokens
+     */
+    function getSupportedTokensCount() external view returns (uint256) {
+        return supportedTokens.length;
+    }
+
+    /**
+     * @notice Get pool balance for a token (available liquidity)
+     * @param token Address of the token
+     * @return Available balance in the pool
+     */
+    function getTokenBalance(address token) external view returns (uint256) {
+        return totalDeposits[token] - totalBorrows[token];
+    }
+
+    /**
+     * @notice Get user's deposited amount for a token
+     * @param user Address of the user
+     * @param token Address of the token
+     * @return Deposited amount
+     */
+    function getUserDeposit(address user, address token) external view returns (uint256) {
+        return userReserves[user][token].deposited;
+    }
+
+    /**
+     * @notice Get user's borrowed amount for a token
+     * @param user Address of the user
+     * @param token Address of the token
+     * @return Borrowed amount
+     */
+    function getUserBorrow(address user, address token) external view returns (uint256) {
+        return userReserves[user][token].borrowed;
+    }
+
+    /**
+     * @notice Get current borrow rate for a token
+     * @param token Address of the token
+     * @return Borrow rate in basis points
+     */
+    function getBorrowRate(address token) external view returns (uint256) {
+        return interestRateModel.calculateBorrowRate(totalBorrows[token], totalDeposits[token]);
+    }
+
+    /**
+     * @notice Get current supply rate for a token
+     * @param token Address of the token
+     * @return Supply rate in basis points
+     */
+    function getSupplyRate(address token) external view returns (uint256) {
+        if (totalDeposits[token] == 0 || totalBorrows[token] == 0) return 0;
+        
+        uint256 borrowRate = interestRateModel.calculateBorrowRate(totalBorrows[token], totalDeposits[token]);
+        
+        // Supply rate = borrow rate * utilization * (1 - reserve factor)
+        // Reserve factor = 10% (suppliers get 90% of interest paid by borrowers)
+        // 
+        // borrowRate is in bps (e.g., 10 bps = 0.10%, meaning 10/10000 = 0.001)
+        // 
+        // Returns rate in basis points (same unit as borrowRate)
+        // At very low utilization, this can round to 0, which is mathematically correct
+        // e.g., 2% utilization, 10 bps borrow rate = 0.18 bps supply rate = 0 when rounded
+        //
+        // For precision: (borrowRate * totalBorrows * 9) / (totalDeposits * 10)
+        // But we need to avoid truncation, so we round up when there's any remainder
+        uint256 numerator = borrowRate * totalBorrows[token] * 9;
+        uint256 denominator = totalDeposits[token] * 10;
+        
+        // Use ceiling division if there's a remainder to avoid showing 0% when rate exists
+        if (numerator % denominator == 0) {
+            return numerator / denominator;
+        }
+        return (numerator / denominator) + 1;
+    }
+
+    /**
+     * @notice Calculate health factor for a user
+     * @param user Address of the user
+     * @return Health factor with 18 decimals precision
+     */
+    function calculateHealthFactor(address user) external view returns (uint256) {
+        uint256 totalDebtUSD = _getUserTotalDebt(user);
+        if (totalDebtUSD == 0) return type(uint256).max;
+        
+        uint256 borrowingPower = _calculateBorrowingPower(user);
+        return (borrowingPower * HEALTH_FACTOR_PRECISION) / totalDebtUSD;
+    }
+
+    /**
+     * @notice Get user's pending LAR rewards (simplified - just LAR balance for now)
+     * @param user Address of the user
+     * @return LAR balance
+     */
+    function getUserLARRewards(address user) external view returns (uint256) {
+        return larToken.balanceOf(user);
+    }
+
     // Internal helper functions
 
     /**

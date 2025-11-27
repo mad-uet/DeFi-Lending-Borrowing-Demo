@@ -496,23 +496,21 @@ export function useDiagnostics(autoRetryInterval?: number) {
           
           try {
             const config = await lendingPool.tokenConfigs(token.address);
-            // config returns: (address priceFeed, uint16 ltv, uint16 liquidationThreshold, bool isActive)
-            const isActive = config.isActive || config[3];
+            // config returns: (address tokenAddress, uint16 ltv, bool isActive)
+            const isActive = config.isActive || config[2];
             const ltv = config.ltv || config[1];
-            const liquidationThreshold = config.liquidationThreshold || config[2];
             
             tokenConfigResults.push({
               name: `${token.name} Config`,
               status: isActive ? 'success' : 'error',
               message: isActive ? `Active - LTV: ${Number(ltv) / 100}%` : 'Not active in LendingPool',
               details: isActive 
-                ? `LTV: ${Number(ltv) / 100}%, Liq Threshold: ${Number(liquidationThreshold) / 100}%`
+                ? `LTV: ${Number(ltv) / 100}%`
                 : 'Token not configured or not active. Run deployment script.',
               data: { 
                 address: token.address, 
                 isActive, 
-                ltv: Number(ltv), 
-                liquidationThreshold: Number(liquidationThreshold) 
+                ltv: Number(ltv)
               },
               timestamp: new Date(),
             });

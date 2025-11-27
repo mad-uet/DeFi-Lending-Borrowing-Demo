@@ -10,6 +10,9 @@ import YourBorrows from '@/components/YourBorrows';
 import HealthFactor from '@/components/HealthFactor';
 import Faucet from '@/components/Faucet';
 import ClientOnly from '@/components/ClientOnly';
+import NotificationCenter from '@/components/ui/NotificationCenter';
+import { LiquidationWarningBanner } from '@/components/LiquidationWarning';
+import { TransactionHistory } from '@/components/TransactionHistory';
 import { useWeb3 } from '@/hooks/useWeb3';
 
 export default function Home() {
@@ -58,7 +61,12 @@ export default function Home() {
               </nav>
             </div>
             <ClientOnly>
-              <WalletConnect />
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <NotificationCenter />
+                </div>
+                <WalletConnect />
+              </div>
             </ClientOnly>
           </div>
         </div>
@@ -128,9 +136,20 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Liquidation Warning Banner - Full Width */}
+              <div className="lg:col-span-3">
+                <LiquidationWarningBanner />
+              </div>
+
               {/* Left Sidebar */}
               <div className="lg:col-span-1 space-y-6">
                 <HealthFactor />
+                
+                {/* Transaction History Card */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+                  <TransactionHistory maxItems={5} compact />
+                </div>
+                
                 <Faucet />
               </div>
 

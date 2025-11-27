@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import { SupplyAsset, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useContract } from '@/hooks/useContract';
+import { useUserAccountData } from '@/hooks/useUserAccountData';
+import { useTransactionNotifications } from '@/hooks/useNotifications';
 import { formatTokenAmount, formatUSD, parseTokenAmount } from '@/lib/utils';
 import { ADDRESSES } from '@/lib/contracts';
+import TransactionPreview from '@/components/ui/TransactionPreview';
 import toast from 'react-hot-toast';
 import { parseUnits } from 'ethers';
 
@@ -16,6 +19,8 @@ interface ModalSupplyProps {
 
 export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
   const { account, signer } = useWeb3();
+  const { accountData } = useUserAccountData();
+  const { notifyTransactionSuccess, notifyTransactionError } = useTransactionNotifications();
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState<TransactionStatus>({
     status: 'idle',
@@ -69,6 +74,7 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
       });
       
       toast.success(`Successfully deposited ${amount} ${asset.symbol}!`, { id: 'deposit' });
+      notifyTransactionSuccess('Supply', asset.symbol, amount, receipt.hash);
       
       // Close modal after 2 seconds
       setTimeout(() => {
@@ -82,6 +88,7 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
         error: error.message,
       });
       toast.error(error.message || 'Transaction failed', { id: 'deposit' });
+      notifyTransactionError('Supply', error.message || 'Transaction failed');
     }
   };
 
@@ -92,93 +99,138 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
     LINK: 15,
   };
 
+  const price = mockPrices[asset.symbol] || 0;
   const usdValue = amount
-    ? (parseFloat(amount) * (mockPrices[asset.symbol] || 0)).toFixed(2)
+    ? (parseFloat(amount) * price).toFixed(2)
     : '0.00';
+
+  // Calculate health factor changes
+  const { totalCollateralUSD, totalBorrowsUSD, ltv } = accountData;
+  const newCollateralUSD = parseFloat(usdValue) || 0;
+  const newTotalCollateralUSD = totalCollateralUSD + newCollateralUSD;
+  
+  let currentHealthFactor = Infinity;
+  let newHealthFactor = Infinity;
+  
+  if (totalBorrowsUSD > 0) {
+    currentHealthFactor = (totalCollateralUSD * ltv) / totalBorrowsUSD;
+    newHealthFactor = (newTotalCollateralUSD * ltv) / totalBorrowsUSD;
+  }
+
+  // Estimate LAR rewards
+  const estimatedLAR = amount ? (parseFloat(usdValue)).toFixed(2) : '0.00';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Supply {asset.symbol}</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <span className="text-2xl">📥</span>
+            Supply {asset.symbol}
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 hover:text-gray-700 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             disabled={status.status === 'approving' || status.status === 'pending'}
           >
             ×
           </button>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2">Amount</label>
-          <div className="relative">
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.0"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              disabled={status.status !== 'idle'}
-            />
-            <button
-              onClick={() => setAmount(asset.walletBalance)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 rounded text-sm font-semibold hover:bg-primary-200 dark:hover:bg-primary-800"
-              disabled={status.status !== 'idle'}
-            >
-              MAX
-            </button>
+        <div className="p-6 space-y-6">
+          {/* Amount input */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Amount to Supply</label>
+            <div className="relative">
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.0"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
+                disabled={status.status !== 'idle'}
+              />
+              <button
+                onClick={() => setAmount(asset.walletBalance)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-400 rounded text-sm font-semibold hover:bg-primary-200 dark:hover:bg-primary-800 transition-colors"
+                disabled={status.status !== 'idle'}
+              >
+                MAX
+              </button>
+            </div>
+            <div className="flex justify-between mt-2 text-sm text-gray-500">
+              <span>≈ ${usdValue}</span>
+              <span>
+                Balance: {formatTokenAmount(asset.walletBalance, asset.decimals)} {asset.symbol}
+              </span>
+            </div>
           </div>
-          <div className="flex justify-between mt-2 text-sm text-gray-500">
-            <span>≈ ${usdValue}</span>
-            <span>
-              Balance: {formatTokenAmount(asset.walletBalance, asset.decimals)} {asset.symbol}
-            </span>
-          </div>
-        </div>
 
-        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Supply APY</span>
-            <span className="font-semibold text-green-600">{asset.supplyAPY}%</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>LAR Rewards (est.)</span>
-            <span className="font-semibold text-primary-600">
-              {amount ? (parseFloat(amount) * 0.05).toFixed(2) : '0.00'} LAR
-            </span>
-          </div>
-        </div>
+          {/* Transaction Preview */}
+          <TransactionPreview
+            type="supply"
+            amount={amount}
+            symbol={asset.symbol}
+            decimals={asset.decimals}
+            currentHealthFactor={currentHealthFactor}
+            newHealthFactor={newHealthFactor}
+            currentWalletBalance={asset.walletBalance}
+            currentPoolBalance={asset.totalSupplied}
+            gasEstimate="~0.003 ETH"
+          />
 
-        {status.status !== 'idle' && (
-          <div className={`mb-4 p-3 rounded-lg ${
-            status.status === 'success' ? 'bg-green-50 text-green-800' :
-            status.status === 'error' ? 'bg-red-50 text-red-800' :
-            'bg-blue-50 text-blue-800'
-          }`}>
-            {status.status === 'approving' || status.status === 'pending' ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                <span>{status.message}</span>
+          {/* Rewards & APY info */}
+          <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <h4 className="font-semibold text-green-800 dark:text-green-200 mb-3 flex items-center gap-2">
+              <span>🎁</span> Rewards & Earnings
+            </h4>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-green-700 dark:text-green-300">Supply APY</span>
+                <span className="font-semibold text-green-600">{asset.supplyAPY}%</span>
               </div>
-            ) : (
-              <span>{status.message}</span>
-            )}
+              <div className="flex justify-between text-sm">
+                <span className="text-green-700 dark:text-green-300">LAR Rewards (estimated)</span>
+                <span className="font-semibold text-primary-600">
+                  {estimatedLAR} LAR
+                </span>
+              </div>
+            </div>
           </div>
-        )}
 
-        <button
-          onClick={handleSupply}
-          disabled={
-            !amount ||
-            parseFloat(amount) <= 0 ||
-            parseFloat(amount) > parseFloat(asset.walletBalance) ||
-            status.status !== 'idle'
-          }
-          className="w-full px-6 py-3 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
-        >
-          {status.status === 'idle' ? 'Supply' : status.status === 'success' ? '✓ Success' : 'Processing...'}
-        </button>
+          {/* Status message */}
+          {status.status !== 'idle' && (
+            <div className={`p-3 rounded-lg ${
+              status.status === 'success' ? 'bg-green-50 text-green-800' :
+              status.status === 'error' ? 'bg-red-50 text-red-800' :
+              'bg-blue-50 text-blue-800'
+            }`}>
+              {status.status === 'approving' || status.status === 'pending' ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>{status.message}</span>
+                </div>
+              ) : (
+                <span>{status.message}</span>
+              )}
+            </div>
+          )}
+
+          {/* Action button */}
+          <button
+            onClick={handleSupply}
+            disabled={
+              !amount ||
+              parseFloat(amount) <= 0 ||
+              parseFloat(amount) > parseFloat(asset.walletBalance) ||
+              status.status !== 'idle'
+            }
+            className="w-full px-6 py-4 bg-primary-500 hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] disabled:transform-none text-lg"
+          >
+            {status.status === 'idle' ? 'Supply' : status.status === 'success' ? '✓ Success' : 'Processing...'}
+          </button>
+        </div>
       </div>
     </div>
   );

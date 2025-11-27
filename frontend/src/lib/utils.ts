@@ -1,26 +1,48 @@
 import { formatUnits, parseUnits } from 'ethers';
 
 /**
- * Format a token amount from wei to human-readable format
+ * Format a token amount to human-readable format
+ * Handles both raw bigint/wei values and pre-formatted strings
  */
 export function formatTokenAmount(
-  amount: bigint | string,
+  amount: bigint | string | number,
   decimals: number = 18,
   displayDecimals: number = 4
 ): string {
   try {
-    const formatted = formatUnits(amount, decimals);
-    const num = parseFloat(formatted);
+    let num: number;
     
+    // If it's already a formatted string (contains decimal point or is a reasonable number string)
+    if (typeof amount === 'string') {
+      // Check if it's a wei-like string (no decimal, very long) or already formatted
+      if (amount.includes('.') || (amount.length < 15 && !amount.startsWith('0x'))) {
+        // Already formatted, just parse as float
+        num = parseFloat(amount);
+      } else {
+        // Wei-like string, needs conversion
+        const formatted = formatUnits(amount, decimals);
+        num = parseFloat(formatted);
+      }
+    } else if (typeof amount === 'number') {
+      num = amount;
+    } else if (typeof amount === 'bigint') {
+      const formatted = formatUnits(amount, decimals);
+      num = parseFloat(formatted);
+    } else {
+      return '0';
+    }
+    
+    // Handle invalid numbers
+    if (isNaN(num) || !isFinite(num)) return '0';
     if (num === 0) return '0';
-    if (num < 0.0001) return '< 0.0001';
+    if (num < 0.0001 && num > 0) return '< 0.0001';
     
     return num.toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: displayDecimals,
     });
   } catch (error) {
-    console.error('Error formatting token amount:', error);
+    console.error('Error formatting token amount:', error, { amount, decimals });
     return '0';
   }
 }
@@ -29,17 +51,24 @@ export function formatTokenAmount(
  * Format USD value
  */
 export function formatUSD(amount: number | string): string {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
-  if (num === 0) return '$0.00';
-  if (num < 0.01) return '< $0.01';
-  
-  return num.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  try {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    
+    // Handle invalid numbers
+    if (isNaN(num) || !isFinite(num)) return '$0.00';
+    if (num === 0) return '$0.00';
+    if (num < 0.01 && num > 0) return '< $0.01';
+    
+    return num.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  } catch (error) {
+    console.error('Error formatting USD:', error, { amount });
+    return '$0.00';
+  }
 }
 
 /**
@@ -96,9 +125,25 @@ export function getHealthFactorStatus(healthFactor: string): 'safe' | 'warning' 
 /**
  * Convert basis points to percentage
  */
-export function bpsToPercent(bps: bigint | number): number {
-  const num = typeof bps === 'bigint' ? Number(bps) : bps;
-  return num / 100;
+export function bpsToPercent(bps: bigint | number | string): number {
+  try {
+    let num: number;
+    if (typeof bps === 'bigint') {
+      num = Number(bps);
+    } else if (typeof bps === 'string') {
+      num = parseFloat(bps);
+    } else {
+      num = bps;
+    }
+    
+    // Handle invalid numbers
+    if (isNaN(num) || !isFinite(num)) return 0;
+    
+    return num / 100;
+  } catch (error) {
+    console.error('Error converting bps to percent:', error, { bps });
+    return 0;
+  }
 }
 
 /**
@@ -153,13 +198,20 @@ export function calculateNewHealthFactor(
  * Format APY with proper decimals
  */
 export function formatAPY(apy: number | string): string {
-  const num = typeof apy === 'string' ? parseFloat(apy) : apy;
-  
-  if (num === 0) return '0.00%';
-  if (num < 0.01) return '< 0.01%';
-  if (num > 1000) return '> 1000%';
-  
-  return `${num.toFixed(2)}%`;
+  try {
+    const num = typeof apy === 'string' ? parseFloat(apy) : apy;
+    
+    // Handle invalid numbers
+    if (isNaN(num) || !isFinite(num)) return '0.00%';
+    if (num === 0) return '0.00%';
+    if (num < 0.01 && num > 0) return '< 0.01%';
+    if (num > 1000) return '> 1000%';
+    
+    return `${num.toFixed(2)}%`;
+  } catch (error) {
+    console.error('Error formatting APY:', error, { apy });
+    return '0.00%';
+  }
 }
 
 /**
