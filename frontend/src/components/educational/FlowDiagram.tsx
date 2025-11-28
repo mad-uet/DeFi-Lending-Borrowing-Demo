@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useEducationalMode } from '@/hooks/useEducationalMode';
-import { DEFI_CONCEPTS } from '@/hooks/useEducationalMode';
+import { useEducationalMode, DEFI_CONCEPTS } from '@/hooks/useEducationalMode';
 
 interface TutorialStep {
   id: string;
@@ -116,170 +115,87 @@ const TUTORIALS: Tutorial[] = [
   },
 ];
 
-// Interactive flow diagram showing the lending/borrowing cycle - S-Curve Roadmap
+// Interactive flow diagram showing the lending/borrowing cycle - Simple S-Curve
 export function FlowDiagram() {
   const { isEnabled } = useEducationalMode();
-  const [activeStep, setActiveStep] = useState<number | null>(null);
 
   if (!isEnabled) return null;
 
   const steps = [
-    { id: 1, label: 'Deposit', icon: '💰', description: 'Supply assets as collateral', color: 'from-green-500 to-emerald-500' },
-    { id: 2, label: 'Collateralize', icon: '🔒', description: 'Assets are locked in protocol', color: 'from-blue-500 to-cyan-500' },
-    { id: 3, label: 'Borrow', icon: '📤', description: 'Borrow against your collateral', color: 'from-purple-500 to-pink-500' },
-    { id: 4, label: 'Use Funds', icon: '💼', description: 'Use borrowed assets freely', color: 'from-orange-500 to-amber-500' },
-    { id: 5, label: 'Repay', icon: '💵', description: 'Return borrowed amount + interest', color: 'from-teal-500 to-green-500' },
-    { id: 6, label: 'Withdraw', icon: '📥', description: 'Reclaim your collateral', color: 'from-indigo-500 to-blue-500' },
+    { id: 1, label: 'Deposit', icon: '💰' },
+    { id: 2, label: 'Collateralize', icon: '🔒' },
+    { id: 3, label: 'Borrow', icon: '📤' },
+    { id: 4, label: 'Use Funds', icon: '💼' },
+    { id: 5, label: 'Repay', icon: '💵' },
+    { id: 6, label: 'Withdraw', icon: '📥' },
   ];
 
   return (
-    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 animate-fade-in">
-      <h3 className="text-lg font-semibold text-gray-100 mb-6 flex items-center gap-2">
-        <span className="text-xl">🔄</span>
-        Lending & Borrowing Cycle
+    <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-5 border border-gray-700/50">
+      <h3 className="text-base font-semibold text-gray-100 mb-4 flex items-center gap-2">
+        🔄 Lending & Borrowing Cycle
       </h3>
       
-      {/* S-Curve Roadmap with SVG Path */}
-      <div className="relative">
-        {/* SVG for the S-curve path */}
-        <svg 
-          className="absolute inset-0 w-full h-full pointer-events-none" 
-          viewBox="0 0 500 200" 
-          preserveAspectRatio="none"
-          style={{ zIndex: 0 }}
-        >
-          <defs>
-            <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.6" />
-              <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.6" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-              <feMerge>
-                <feMergeNode in="coloredBlur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-          {/* Main S-curve path */}
-          <path
-            d="M 45 50 
-               C 100 50, 120 50, 165 50
-               C 210 50, 230 50, 250 50
-               C 290 50, 330 50, 370 50
-               C 420 50, 460 80, 460 100
-               C 460 130, 420 150, 370 150
-               C 320 150, 280 150, 250 150
-               C 200 150, 160 150, 130 150
-               C 80 150, 40 150, 40 150"
-            fill="none"
-            stroke="url(#pathGradient)"
-            strokeWidth="4"
-            strokeLinecap="round"
-            filter="url(#glow)"
-            className="animate-pulse"
-          />
-          {/* Animated dots along the path */}
-          <circle r="4" fill="#22c55e">
-            <animateMotion
-              dur="6s"
-              repeatCount="indefinite"
-              path="M 45 50 C 100 50, 120 50, 165 50 C 210 50, 230 50, 250 50 C 290 50, 330 50, 370 50 C 420 50, 460 80, 460 100 C 460 130, 420 150, 370 150 C 320 150, 280 150, 250 150 C 200 150, 160 150, 130 150 C 80 150, 40 150, 40 150"
-            />
-          </circle>
-        </svg>
-
-        {/* Step nodes positioned along the S-curve */}
-        <div className="relative" style={{ zIndex: 1 }}>
-          {/* Top row: Steps 1, 2, 3 */}
-          <div className="flex justify-between items-start px-2 mb-8">
-            {steps.slice(0, 3).map((step) => (
-              <StepNode 
-                key={step.id}
-                step={step} 
-                isActive={activeStep === step.id}
-                onMouseEnter={() => setActiveStep(step.id)}
-                onMouseLeave={() => setActiveStep(null)}
-              />
-            ))}
-          </div>
-          
-          {/* Curved connector visual indicator */}
-          <div className="flex justify-end pr-4 -mt-4 mb-4">
-            <div className="text-primary-400 text-2xl animate-bounce">↓</div>
-          </div>
-
-          {/* Bottom row: Steps 6, 5, 4 (reversed for S-flow) */}
-          <div className="flex justify-between items-start px-2 flex-row-reverse">
-            {steps.slice(3, 6).map((step) => (
-              <StepNode 
-                key={step.id}
-                step={step} 
-                isActive={activeStep === step.id}
-                onMouseEnter={() => setActiveStep(step.id)}
-                onMouseLeave={() => setActiveStep(null)}
-              />
-            ))}
-          </div>
+      {/* Simple S-Curve Layout */}
+      <div className="space-y-3">
+        {/* Row 1: 1 → 2 → 3 */}
+        <div className="flex items-center justify-center gap-2">
+          <Step step={steps[0]} />
+          <Arrow />
+          <Step step={steps[1]} />
+          <Arrow />
+          <Step step={steps[2]} />
+          <CurveDown />
         </div>
-
-        {/* Cycle indicator */}
-        <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-700/50">
-          <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-gray-700/30 border border-gray-600/50">
-            <div className="relative">
-              <svg className="w-6 h-6 text-primary-400 animate-spin" style={{ animationDuration: '3s' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </div>
-            <span className="text-sm text-primary-300 font-medium">Cycle repeats - continuous earning!</span>
-          </div>
+        
+        {/* Row 2: 6 ← 5 ← 4 */}
+        <div className="flex items-center justify-center gap-2">
+          <CurveUp />
+          <Step step={steps[5]} />
+          <Arrow flip />
+          <Step step={steps[4]} />
+          <Arrow flip />
+          <Step step={steps[3]} />
         </div>
       </div>
+
+      {/* Cycle text */}
+      <p className="text-center text-xs text-gray-500 mt-4">
+        ↻ Cycle repeats for continuous earning
+      </p>
     </div>
   );
 }
 
-// Step Node Component for the roadmap
-interface StepNodeProps {
-  step: { id: number; label: string; icon: string; description: string; color: string };
-  isActive: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
+function Step({ step }: { step: { id: number; label: string; icon: string } }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-xl relative">
+        {step.icon}
+        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary-500 text-[10px] font-bold text-white flex items-center justify-center">
+          {step.id}
+        </span>
+      </div>
+      <span className="text-[10px] text-gray-400 mt-1">{step.label}</span>
+    </div>
+  );
 }
 
-function StepNode({ step, isActive, onMouseEnter, onMouseLeave }: StepNodeProps) {
+function Arrow({ flip }: { flip?: boolean }) {
   return (
-    <div className="relative group">
-      <button
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        className={`relative flex flex-col items-center p-4 rounded-2xl transition-all duration-300 min-w-[90px] ${
-          isActive
-            ? `bg-gradient-to-br ${step.color} text-white scale-110 shadow-lg shadow-primary-500/30`
-            : 'bg-gray-700/70 text-gray-300 hover:bg-gray-700 hover:scale-105 border border-gray-600/50'
-        }`}
-      >
-        {/* Step number badge */}
-        <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
-          isActive 
-            ? 'bg-white text-gray-900 border-white' 
-            : 'bg-gray-800 text-primary-400 border-primary-500/50'
-        }`}>
-          {step.id}
-        </div>
-        <span className="text-2xl mb-1">{step.icon}</span>
-        <span className="text-xs font-medium text-center leading-tight">{step.label}</span>
-      </button>
-      
-      {/* Tooltip on hover */}
-      {isActive && (
-        <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-44 p-2.5 bg-gray-900 rounded-lg text-center text-xs text-gray-300 shadow-xl border border-gray-700" style={{ zIndex: 100 }}>
-          {step.description}
-          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-gray-900 border-l border-t border-gray-700 rotate-45" />
-        </div>
-      )}
-    </div>
+    <span className={`text-gray-500 text-sm ${flip ? 'rotate-180' : ''}`}>→</span>
+  );
+}
+
+function CurveDown() {
+  return (
+    <span className="text-gray-500 text-sm ml-1">↴</span>
+  );
+}
+
+function CurveUp() {
+  return (
+    <span className="text-gray-500 text-sm mr-1">↵</span>
   );
 }
 
