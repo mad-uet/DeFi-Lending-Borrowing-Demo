@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useDiagnostics, DiagnosticStatus, DiagnosticCategory, LogEntry } from '@/hooks/useDiagnostics';
+import { Header } from '@/components/layout';
 import { ADDRESSES, CHAIN_ID } from '@/lib/contracts';
 
 const StatusIcon = ({ status }: { status: DiagnosticStatus }) => {
@@ -268,76 +268,35 @@ export default function StatusPage() {
   };
 
   const statusColors = {
-    success: 'from-green-500 to-green-600',
-    error: 'from-red-500 to-red-600',
-    warning: 'from-yellow-500 to-yellow-600',
+    success: 'from-green-500 to-emerald-600',
+    error: 'from-red-500 to-rose-600',
+    warning: 'from-amber-500 to-orange-600',
     pending: 'from-gray-400 to-gray-500',
     skipped: 'from-gray-400 to-gray-500',
+  };
+
+  const statusIcons = {
+    success: '✅',
+    error: '❌',
+    warning: '⚠️',
+    pending: '⏳',
+    skipped: '⏸️',
   };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                🔧
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  System Diagnostics
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Real-time system health monitoring
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link
-                href="/"
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                ← Back to Dashboard
-              </Link>
-              <Link
-                href="/analytics"
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Analytics
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="container mx-auto px-4 py-8">
         {/* Overall Status Banner */}
         <div
-          className={`bg-gradient-to-r ${statusColors[overallStatus]} rounded-xl p-6 mb-8 text-white shadow-lg`}
+          className={`bg-gradient-to-r ${statusColors[overallStatus]} rounded-2xl p-6 mb-8 text-white shadow-xl animate-fade-in`}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                {overallStatus === 'success' && (
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-                {overallStatus === 'error' && (
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-                {overallStatus === 'warning' && (
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                )}
-                {overallStatus === 'pending' && (
-                  <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                )}
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <span className="text-3xl">{statusIcons[overallStatus]}</span>
               </div>
               <div>
                 <h2 className="text-2xl font-bold">{statusMessages[overallStatus]}</h2>
@@ -349,24 +308,24 @@ export default function StatusPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">
                 <input
                   type="checkbox"
                   checked={autoRefresh}
                   onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="w-4 h-4 rounded"
+                  className="w-4 h-4 rounded accent-white"
                 />
-                <span className="text-sm">Auto-refresh (5s)</span>
+                <span className="text-sm font-medium">Auto-refresh</span>
               </label>
               <button
                 onClick={runDiagnostics}
                 disabled={isRunning}
-                className="px-6 py-2 bg-white/20 hover:bg-white/30 disabled:opacity-50 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                className="px-6 py-2.5 bg-white/20 hover:bg-white/30 disabled:opacity-50 rounded-xl font-semibold transition-all flex items-center gap-2 backdrop-blur-sm"
               >
                 {isRunning && (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 )}
-                {isRunning ? 'Running...' : 'Run Diagnostics'}
+                {isRunning ? 'Running...' : '🔍 Run Diagnostics'}
               </button>
             </div>
           </div>

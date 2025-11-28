@@ -541,3 +541,112 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ============================================
+   Z-INDEX LAYERS
+   ============================================ */
+.z-tooltip {
+  z-index: 9999 !important;
+}
+
+.z-modal {
+  z-index: 50;
+}
+
+.z-modal-content {
+  z-index: 51;
+}
+
+.z-header {
+  z-index: 40;
+}
+
+/* ============================================
+   FORM INPUT FIXES
+   ============================================ */
+
+/* Fix input text color in dark mode */
+input[type="number"],
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  color: inherit;
+  background-color: inherit;
+}
+
+/* Ensure inputs have proper dark mode styling */
+.dark input[type="number"],
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark textarea {
+  color: white;
+  background-color: rgb(55 65 81); /* gray-700 */
+}
+
+/* Fix input placeholder color */
+input::placeholder,
+textarea::placeholder {
+  color: rgb(156 163 175); /* gray-400 */
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(107 114 128); /* gray-500 */
+}
+
+/* Fix hover states - ensure text adapts to background */
+.hover-fix:hover {
+  color: rgb(17 24 39); /* gray-900 for light backgrounds */
+}
+
+.dark .hover-fix:hover {
+  color: white;
+}
+
+/* ============================================
+   MODAL IMPROVEMENTS
+   ============================================ */
+
+/* Prevent modal header from being overlapped */
+.modal-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: inherit;
+}
+
+/* Fix modal input styling */
+.modal-input {
+  @apply w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 
+         bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+         focus:ring-2 focus:ring-primary-500 focus:border-transparent 
+         transition-all duration-200;
+}
+
+/* Fix modal backdrop scroll lock */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto;
+}
+
+.modal-content {
+  @apply bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col;
+}
+
+/* ============================================
+   TOOLTIP IMPROVEMENTS
+   ============================================ */
+
+/* Ensure tooltips are always on top */
+[data-tooltip],
+.tooltip,
+[role="tooltip"] {
+  z-index: 9999 !important;
+}
+
+/* Tooltip arrow fix */
+.tooltip-arrow {
+  z-index: 9999;
+}
+

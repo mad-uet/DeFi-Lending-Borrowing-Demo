@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import WalletConnect from '@/components/WalletConnect';
 import SupplyAssets from '@/components/SupplyAssets';
 import YourSupplies from '@/components/YourSupplies';
 import BorrowAssets from '@/components/BorrowAssets';
@@ -10,15 +8,15 @@ import YourBorrows from '@/components/YourBorrows';
 import HealthFactor from '@/components/HealthFactor';
 import Faucet from '@/components/Faucet';
 import ClientOnly from '@/components/ClientOnly';
-import NotificationCenter from '@/components/ui/NotificationCenter';
 import DashboardStats from '@/components/DashboardStats';
 import QuickActions from '@/components/QuickActions';
 import PositionSummary from '@/components/PositionSummary';
 import { LiquidationWarningBanner } from '@/components/LiquidationWarning';
 import { TransactionHistory } from '@/components/TransactionHistory';
-import { EducationalToggle, EducationalBadge, EducationalPanel } from '@/components/educational';
+import { EducationalPanel } from '@/components/educational';
 import { EducationalFloatingToggle } from '@/components/educational/EducationalToggle';
-import { SimulationPanel, SimulationBadge } from '@/components/sandbox';
+import { SimulationPanel } from '@/components/sandbox';
+import { Header } from '@/components/layout';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useEducationalMode } from '@/hooks/useEducationalMode';
 import { useSimulation } from '@/hooks/useSimulation';
@@ -32,58 +30,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                  DL
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    DeFi Lending & Borrowing
-                  </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Supply, borrow, and earn rewards
-                  </p>
-                </div>
-              </div>
-              <nav className="hidden md:flex items-center gap-4">
-                <Link
-                  href="/"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/analytics"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                >
-                  Analytics
-                </Link>
-                <Link
-                  href="/status"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                >
-                  🔧 Status
-                </Link>
-              </nav>
-            </div>
-            <ClientOnly>
-              <div className="flex items-center gap-3">
-                <SimulationBadge />
-                <EducationalBadge />
-                <EducationalToggle size="sm" />
-                <div className="relative">
-                  <NotificationCenter />
-                </div>
-                <WalletConnect />
-              </div>
-            </ClientOnly>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">

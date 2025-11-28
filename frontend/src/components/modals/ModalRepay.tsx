@@ -129,45 +129,45 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center flex-shrink-0">
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-900 dark:text-white">
             <span className="text-2xl">✅</span>
             Repay {borrow.asset.symbol}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             disabled={status.status === 'approving' || status.status === 'pending'}
           >
             ×
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Amount input */}
           <div>
-            <label className="block text-sm font-medium mb-2">Amount to Repay</label>
+            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Amount to Repay</label>
             <div className="relative">
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg transition-all"
                 disabled={status.status !== 'idle'}
               />
               <button
                 onClick={() => setAmount(borrow.totalDebt)}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 rounded text-sm font-semibold hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg text-sm font-semibold hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
                 disabled={status.status !== 'idle'}
               >
                 MAX
               </button>
             </div>
-            <div className="flex justify-between mt-2 text-sm text-gray-500">
+            <div className="flex justify-between mt-2 text-sm text-gray-500 dark:text-gray-400">
               <span>≈ ${usdValue}</span>
               <span>
                 Total Debt: {formatTokenAmount(borrow.totalDebt, borrow.asset.decimals)} {borrow.asset.symbol}
