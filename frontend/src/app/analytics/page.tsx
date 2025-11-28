@@ -5,7 +5,6 @@ import { useWeb3 } from '@/hooks/useWeb3';
 import { useContract } from '@/hooks/useContract';
 import { formatUnits } from 'ethers';
 import Link from 'next/link';
-import { Header } from '@/components/layout';
 import { ADDRESSES, CHAIN_ID } from '@/lib/contracts';
 
 interface TokenStats {
@@ -166,7 +165,6 @@ export default function AnalyticsPage() {
   if (!isConnected) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <Header />
         <div className="container mx-auto px-4 py-20">
           <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center animate-fade-in">
             <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -186,7 +184,6 @@ export default function AnalyticsPage() {
   if (chainId !== CHAIN_ID) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <Header />
         <div className="container mx-auto px-4 py-20">
           <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center animate-fade-in">
             <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -205,8 +202,6 @@ export default function AnalyticsPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header />
-
       <div className="container mx-auto px-4 py-8">
         {error && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl animate-fade-in">

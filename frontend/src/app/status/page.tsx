@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useDiagnostics, DiagnosticStatus, DiagnosticCategory, LogEntry } from '@/hooks/useDiagnostics';
-import { Header } from '@/components/layout';
 import { ADDRESSES, CHAIN_ID } from '@/lib/contracts';
 
 const StatusIcon = ({ status }: { status: DiagnosticStatus }) => {
@@ -205,11 +204,11 @@ const ConfigDisplay = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           Environment Configuration
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Current values from .env.local
         </p>
       </div>
@@ -217,27 +216,25 @@ const ConfigDisplay = () => {
         {configItems.map((item) => (
           <div
             key={item.label}
-            className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            className="px-4 py-2 grid grid-cols-[80px_1fr_auto] items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           >
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
               {item.label}
             </span>
-            <div className="flex items-center gap-2">
-              <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-800 dark:text-gray-200 max-w-[300px] truncate">
-                {item.value || 'Not set'}
-              </code>
-              {item.value && (
-                <button
-                  onClick={() => copyToClipboard(item.value)}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
-                  title="Copy to clipboard"
-                >
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </button>
-              )}
-            </div>
+            <code className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-gray-800 dark:text-gray-200 truncate">
+              {item.value || 'Not set'}
+            </code>
+            {item.value && (
+              <button
+                onClick={() => copyToClipboard(item.value)}
+                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
+                title="Copy to clipboard"
+              >
+                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -285,9 +282,6 @@ export default function StatusPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <Header />
-
       <div className="container mx-auto px-4 py-8">
         {/* Overall Status Banner */}
         <div
@@ -331,9 +325,9 @@ export default function StatusPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           {/* Left Column - Diagnostic Results */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="xl:col-span-2 space-y-6">
             {categories.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
                 <div className="w-12 h-12 border-4 border-gray-300 border-t-primary-500 rounded-full animate-spin mx-auto mb-4"></div>
@@ -346,8 +340,15 @@ export default function StatusPage() {
             )}
           </div>
 
-          {/* Right Column - Config & Logs */}
-          <div className="space-y-6">
+          {/* Middle Column - Debug Console (now more accessible) */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-24">
+              <LogConsole logs={logs} onClear={clearLogs} />
+            </div>
+          </div>
+
+          {/* Right Column - Config & Quick Fixes */}
+          <div className="xl:col-span-1 space-y-6">
             <ConfigDisplay />
             
             {/* Quick Fixes */}
@@ -377,11 +378,6 @@ export default function StatusPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Debug Console */}
-        <div className="mt-8">
-          <LogConsole logs={logs} onClear={clearLogs} />
         </div>
       </div>
     </main>

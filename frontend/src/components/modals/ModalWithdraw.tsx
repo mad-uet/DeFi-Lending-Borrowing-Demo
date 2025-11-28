@@ -142,7 +142,7 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
           {/* Amount input */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Amount to Withdraw</label>
-            <div className="relative">
+            <div className="flex gap-2">
               <input
                 type="number"
                 value={amount}
@@ -151,12 +151,13 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
                   setAcknowledgeRisk(false);
                 }}
                 placeholder="0.0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-lg transition-all"
+                style={{ color: 'inherit' }}
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-lg transition-all"
                 disabled={status.status !== 'idle'}
               />
               <button
                 onClick={() => setAmount(supply.supplied)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-lg text-sm font-semibold hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors"
+                className="px-4 py-3 bg-yellow-100 dark:bg-yellow-900/50 text-yellow-600 dark:text-yellow-400 rounded-xl text-sm font-semibold hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors whitespace-nowrap"
                 disabled={status.status !== 'idle'}
               >
                 MAX
@@ -257,7 +258,10 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
             </div>
           )}
 
-          {/* Action button */}
+        </div>
+
+        {/* Fixed Footer with Action Button */}
+        <div className="sticky bottom-0 z-10 bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={handleWithdraw}
             disabled={
@@ -268,7 +272,7 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
               txProgress.isInProgress ||
               txProgress.isComplete
             }
-            className={`w-full px-6 py-4 font-semibold rounded-lg transition-all transform hover:scale-[1.02] ${
+            className={`w-full px-6 py-4 font-semibold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg ${
               isLiquidationRisk 
                 ? 'bg-red-500 hover:bg-red-600' 
                 : 'bg-yellow-500 hover:bg-yellow-600'

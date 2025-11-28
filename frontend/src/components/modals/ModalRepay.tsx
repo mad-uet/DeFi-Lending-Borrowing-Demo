@@ -150,18 +150,19 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
           {/* Amount input */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Amount to Repay</label>
-            <div className="relative">
+            <div className="flex gap-2">
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg transition-all"
+                style={{ color: 'inherit' }}
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg transition-all"
                 disabled={status.status !== 'idle'}
               />
               <button
                 onClick={() => setAmount(borrow.totalDebt)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-lg text-sm font-semibold hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                className="px-4 py-3 bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rounded-xl text-sm font-semibold hover:bg-green-200 dark:hover:bg-green-800 transition-colors whitespace-nowrap"
                 disabled={status.status !== 'idle'}
               >
                 MAX
@@ -276,7 +277,10 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
             </div>
           )}
 
-          {/* Action button */}
+        </div>
+
+        {/* Fixed Footer with Action Button */}
+        <div className="sticky bottom-0 z-10 bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={handleRepay}
             disabled={
@@ -286,7 +290,7 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
               txProgress.isInProgress ||
               txProgress.isComplete
             }
-            className="w-full px-6 py-4 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] disabled:transform-none text-lg"
+            className="w-full px-6 py-4 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all transform hover:scale-[1.02] disabled:transform-none text-lg shadow-lg"
           >
             {txProgress.phase === 'idle' 
               ? isFullRepayment 

@@ -16,7 +16,6 @@ import { TransactionHistory } from '@/components/TransactionHistory';
 import { EducationalPanel } from '@/components/educational';
 import { EducationalFloatingToggle } from '@/components/educational/EducationalToggle';
 import { SimulationPanel } from '@/components/sandbox';
-import { Header } from '@/components/layout';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useEducationalMode } from '@/hooks/useEducationalMode';
 import { useSimulation } from '@/hooks/useSimulation';
@@ -29,9 +28,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <Header />
-
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <ClientOnly>

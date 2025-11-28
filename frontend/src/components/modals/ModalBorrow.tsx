@@ -149,7 +149,7 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
           {/* Amount input */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Amount to Borrow</label>
-            <div className="relative">
+            <div className="flex gap-2">
               <input
                 type="number"
                 value={amount}
@@ -158,12 +158,13 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
                   setAcknowledgeRisk(false); // Reset acknowledgment when amount changes
                 }}
                 placeholder="0.0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg transition-all"
+                style={{ color: 'inherit' }}
+                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg transition-all"
                 disabled={status.status !== 'idle'}
               />
               <button
                 onClick={() => setAmount(asset.maxBorrow)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-lg text-sm font-semibold hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                className="px-4 py-3 bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 rounded-xl text-sm font-semibold hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors whitespace-nowrap"
                 disabled={status.status !== 'idle'}
               >
                 MAX
@@ -284,7 +285,10 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
             </div>
           )}
 
-          {/* Action button */}
+        </div>
+
+        {/* Fixed Footer with Action Button */}
+        <div className="sticky bottom-0 z-10 bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={handleBorrow}
             disabled={
@@ -296,7 +300,7 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
               txProgress.isInProgress ||
               txProgress.isComplete
             }
-            className={`w-full px-6 py-4 font-semibold rounded-lg transition-all transform hover:scale-[1.02] ${
+            className={`w-full px-6 py-4 font-semibold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg ${
               isLiquidationRisk 
                 ? 'bg-red-500 hover:bg-red-600 disabled:bg-gray-300' 
                 : 'bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300'

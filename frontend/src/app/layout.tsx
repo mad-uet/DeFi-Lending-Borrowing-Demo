@@ -7,6 +7,7 @@ import { EducationalModeProvider } from '@/hooks/useEducationalMode'
 import { SimulationProvider } from '@/hooks/useSimulation'
 import { ToastContainer } from '@/components/ui/NotificationCenter'
 import { Toaster } from 'react-hot-toast'
+import { Header } from '@/components/layout'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           <NotificationProvider>
             <EducationalModeProvider>
               <SimulationProvider>
+                <Header />
                 {children}
                 <ToastContainer />
                 <Toaster
