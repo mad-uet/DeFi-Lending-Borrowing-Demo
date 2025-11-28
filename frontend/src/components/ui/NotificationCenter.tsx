@@ -85,9 +85,9 @@ export default function NotificationCenter() {
           {/* Panel */}
           <div className="absolute right-0 top-full mt-2 w-96 max-h-[70vh] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden animate-slide-down">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Notifications</h3>
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">Notifications</h3>
                 <div className="flex items-center gap-2">
                   {unreadCount > 0 && (
                     <button
@@ -100,7 +100,7 @@ export default function NotificationCenter() {
                   {notifications.length > 0 && (
                     <button
                       onClick={clearAll}
-                      className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       Clear all
                     </button>

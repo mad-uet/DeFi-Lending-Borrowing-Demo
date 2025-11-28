@@ -8,6 +8,7 @@ import { SimulationProvider } from '@/hooks/useSimulation'
 import { ToastContainer } from '@/components/ui/NotificationCenter'
 import { Toaster } from 'react-hot-toast'
 import { Header } from '@/components/layout'
+import ScrollToTop from '@/components/ScrollToTop'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -28,6 +29,7 @@ export default function RootLayout({
           <NotificationProvider>
             <EducationalModeProvider>
               <SimulationProvider>
+                <ScrollToTop />
                 <Header />
                 {children}
                 <ToastContainer />

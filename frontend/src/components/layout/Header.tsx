@@ -8,50 +8,23 @@ import { EducationalToggle, EducationalBadge } from '@/components/educational';
 import { SimulationBadge } from '@/components/sandbox';
 import ClientOnly from '@/components/ClientOnly';
 
-// SVG Logo Component - Modern DeFi-style icon
+// Modern DeFi Logo Component - Clean and Professional
 function Logo() {
   return (
-    <div className="w-10 h-10 relative">
-      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-        {/* Background circle with gradient */}
+    <div className="w-9 h-9 relative flex items-center justify-center">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
         <defs>
           <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#6366f1" />
-            <stop offset="50%" stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#a855f7" />
-          </linearGradient>
-          <linearGradient id="innerGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#10b981" />
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#8b5cf6" />
           </linearGradient>
         </defs>
-        
-        {/* Outer ring */}
-        <circle cx="20" cy="20" r="18" stroke="url(#logoGradient)" strokeWidth="2.5" fill="none" />
-        
-        {/* Inner stylized L shape representing Lending */}
-        <path 
-          d="M14 12 L14 24 L26 24" 
-          stroke="url(#logoGradient)" 
-          strokeWidth="3" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-          fill="none"
-        />
-        
-        {/* Ascending arrow representing growth/borrowing */}
-        <path 
-          d="M22 20 L26 16 M26 16 L22 16 M26 16 L26 20" 
-          stroke="url(#innerGradient)" 
-          strokeWidth="2.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-          fill="none"
-        />
-        
-        {/* Small decorative dots */}
-        <circle cx="14" cy="12" r="2" fill="url(#logoGradient)" />
-        <circle cx="26" cy="16" r="2" fill="url(#innerGradient)" />
+        {/* Background rounded square */}
+        <rect x="2" y="2" width="32" height="32" rx="8" fill="url(#logoGradient)" />
+        {/* LB letters stylized */}
+        <text x="18" y="24" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="system-ui">
+          LB
+        </text>
       </svg>
     </div>
   );

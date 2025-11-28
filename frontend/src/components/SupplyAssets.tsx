@@ -41,7 +41,7 @@ export default function SupplyAssets() {
             {assets.map((asset) => (
               <tr
                 key={asset.address}
-                className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors"
               >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
@@ -49,33 +49,36 @@ export default function SupplyAssets() {
                       {asset.symbol.slice(0, 2)}
                     </div>
                     <div>
-                      <div className="font-semibold">{asset.symbol}</div>
-                      <div className="text-sm text-gray-500">{asset.name}</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{asset.symbol}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{asset.name}</div>
                     </div>
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <div className="group relative inline-flex items-center justify-end">
-                    <span className="text-green-600 font-semibold">
+                  <div className="group/tooltip relative inline-flex items-center justify-end">
+                    <span className="text-green-600 dark:text-green-400 font-semibold">
                       {formatAPY(parseFloat(asset.supplyAPY))}
                     </span>
                     {parseFloat(asset.supplyAPY) === 0 && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
-                        No borrows yet = No interest earned
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                      </div>
+                      <>
+                        <span className="ml-1 text-gray-400 cursor-help">ⓘ</span>
+                        <div className="invisible group-hover/tooltip:visible absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-xl" style={{ zIndex: 9999 }}>
+                          No borrows yet = No interest earned
+                          <div className="absolute top-full right-4 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </>
                     )}
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <div>{formatTokenAmount(asset.totalSupplied, asset.decimals)} {asset.symbol}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-gray-900 dark:text-white">{formatTokenAmount(asset.totalSupplied, asset.decimals)} {asset.symbol}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {formatUSD(parseFloat(asset.totalSuppliedUSD))}
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <div>{formatTokenAmount(asset.walletBalance, asset.decimals)} {asset.symbol}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-gray-900 dark:text-white">{formatTokenAmount(asset.walletBalance, asset.decimals)} {asset.symbol}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {formatUSD(parseFloat(asset.walletBalanceUSD))}
                   </div>
                 </td>

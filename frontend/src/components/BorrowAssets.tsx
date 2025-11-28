@@ -42,7 +42,7 @@ export default function BorrowAssets() {
             {assets.map((asset) => (
               <tr
                 key={asset.address}
-                className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors"
               >
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
@@ -50,31 +50,31 @@ export default function BorrowAssets() {
                       {asset.symbol.slice(0, 2)}
                     </div>
                     <div>
-                      <div className="font-semibold">{asset.symbol}</div>
-                      <div className="text-sm text-gray-500">{asset.name}</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{asset.symbol}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{asset.name}</div>
                     </div>
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <span className="text-red-600 font-semibold">
+                  <span className="text-red-600 dark:text-red-400 font-semibold">
                     {formatAPY(parseFloat(asset.borrowAPY))}
                   </span>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <div>{formatTokenAmount(asset.availableToBorrow, asset.decimals)} {asset.symbol}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-gray-900 dark:text-white">{formatTokenAmount(asset.availableToBorrow, asset.decimals)} {asset.symbol}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {formatUSD(parseFloat(asset.availableToBorrowUSD))}
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <div>{formatTokenAmount(asset.yourBorrows, asset.decimals)} {asset.symbol}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-gray-900 dark:text-white">{formatTokenAmount(asset.yourBorrows, asset.decimals)} {asset.symbol}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {formatUSD(parseFloat(asset.yourBorrowsUSD))}
                   </div>
                 </td>
                 <td className="text-right py-4 px-4">
-                  <div>{formatTokenAmount(asset.maxBorrow, asset.decimals)} {asset.symbol}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-gray-900 dark:text-white">{formatTokenAmount(asset.maxBorrow, asset.decimals)} {asset.symbol}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
                     {formatUSD(parseFloat(asset.maxBorrowUSD))}
                   </div>
                 </td>

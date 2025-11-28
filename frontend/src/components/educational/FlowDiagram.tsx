@@ -116,7 +116,7 @@ const TUTORIALS: Tutorial[] = [
   },
 ];
 
-// Interactive flow diagram showing the lending/borrowing cycle
+// Interactive flow diagram showing the lending/borrowing cycle - Flipped S-Shape Roadmap
 export function FlowDiagram() {
   const { isEnabled } = useEducationalMode();
   const [activeStep, setActiveStep] = useState<number | null>(null);
@@ -134,55 +134,105 @@ export function FlowDiagram() {
 
   return (
     <div className="bg-gray-800/80 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 animate-fade-in">
-      <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center gap-2">
+      <h3 className="text-lg font-semibold text-gray-100 mb-6 flex items-center gap-2">
         <span className="text-xl">🔄</span>
         Lending & Borrowing Cycle
       </h3>
       
-      <div className="relative">
-        {/* Flow diagram */}
-        <div className="flex flex-wrap justify-center gap-4">
-          {steps.map((step, index) => (
+      {/* S-Shaped Roadmap */}
+      <div className="relative px-4">
+        {/* Row 1: Steps 1-3 (left to right) */}
+        <div className="flex items-center justify-between mb-2">
+          {steps.slice(0, 3).map((step, index) => (
             <div key={step.id} className="flex items-center">
-              <button
+              <StepNode 
+                step={step} 
+                isActive={activeStep === step.id}
                 onMouseEnter={() => setActiveStep(step.id)}
                 onMouseLeave={() => setActiveStep(null)}
-                className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${
-                  activeStep === step.id
-                    ? `bg-gradient-to-br ${step.color} text-white scale-110 shadow-lg`
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                <span className="text-2xl mb-1">{step.icon}</span>
-                <span className="text-xs font-medium">{step.label}</span>
-                
-                {activeStep === step.id && (
-                  <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-36 p-2 bg-gray-900 rounded-lg text-center text-xs text-gray-300 shadow-xl z-10">
-                    {step.description}
-                  </div>
-                )}
-              </button>
-              
-              {/* Arrow */}
-              {index < steps.length - 1 && (
-                <svg className="w-6 h-6 text-gray-600 mx-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
+              />
+              {index < 2 && (
+                <div className="w-12 h-0.5 bg-gradient-to-r from-gray-600 to-gray-500 mx-1">
+                  <div className="w-full h-full bg-gradient-to-r from-primary-500/50 to-primary-400/50 animate-pulse" />
+                </div>
               )}
             </div>
           ))}
         </div>
 
-        {/* Return arrow */}
-        <div className="flex justify-center mt-4">
-          <div className="flex items-center gap-2 text-gray-500 text-xs">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+        {/* Connector: Step 3 down to Step 4 */}
+        <div className="flex justify-end pr-8 my-1">
+          <div className="w-0.5 h-8 bg-gradient-to-b from-gray-500 to-gray-600">
+            <div className="w-full h-full bg-gradient-to-b from-primary-400/50 to-primary-500/50 animate-pulse" />
+          </div>
+        </div>
+
+        {/* Row 2: Steps 4-6 (right to left) */}
+        <div className="flex items-center justify-between flex-row-reverse mt-2">
+          {steps.slice(3, 6).map((step, index) => (
+            <div key={step.id} className="flex items-center flex-row-reverse">
+              <StepNode 
+                step={step} 
+                isActive={activeStep === step.id}
+                onMouseEnter={() => setActiveStep(step.id)}
+                onMouseLeave={() => setActiveStep(null)}
+              />
+              {index < 2 && (
+                <div className="w-12 h-0.5 bg-gradient-to-l from-gray-600 to-gray-500 mx-1">
+                  <div className="w-full h-full bg-gradient-to-l from-primary-500/50 to-primary-400/50 animate-pulse" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Return arrow from Step 6 back to Step 1 */}
+        <div className="flex items-center justify-center mt-4 pt-2 border-t border-gray-700/50">
+          <div className="flex items-center gap-2 text-gray-400 text-xs">
+            <svg className="w-5 h-5 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span>Cycle repeats</span>
+            <span className="text-primary-300">Cycle repeats - continuous earning!</span>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Step Node Component for the roadmap
+interface StepNodeProps {
+  step: { id: number; label: string; icon: string; description: string; color: string };
+  isActive: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+}
+
+function StepNode({ step, isActive, onMouseEnter, onMouseLeave }: StepNodeProps) {
+  return (
+    <div className="relative">
+      <button
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 min-w-[70px] ${
+          isActive
+            ? `bg-gradient-to-br ${step.color} text-white scale-110 shadow-lg shadow-primary-500/20`
+            : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700 hover:scale-105'
+        }`}
+      >
+        <div className="absolute -top-1 -left-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center text-xs font-bold text-primary-400 border border-gray-600">
+          {step.id}
+        </div>
+        <span className="text-2xl mb-1">{step.icon}</span>
+        <span className="text-xs font-medium text-center leading-tight">{step.label}</span>
+      </button>
+      
+      {isActive && (
+        <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 w-40 p-2 bg-gray-900 rounded-lg text-center text-xs text-gray-300 shadow-xl z-50 border border-gray-700">
+          {step.description}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 border-l border-t border-gray-700 rotate-45" />
+        </div>
+      )}
     </div>
   );
 }
