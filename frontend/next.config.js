@@ -9,12 +9,11 @@ const nextConfig = {
   experimental: {
     // Optimize package imports
     optimizePackageImports: ['ethers', '@radix-ui/react-dialog', '@radix-ui/react-tabs'],
-  },
-  
-  // Turbopack configuration (used when running with --turbo)
-  turbo: {
-    resolveAlias: {
-      // Add any aliases needed for Turbopack
+    // Turbopack configuration (used when running with --turbo)
+    turbo: {
+      resolveAlias: {
+        // Aliases are automatically handled
+      },
     },
   },
   
