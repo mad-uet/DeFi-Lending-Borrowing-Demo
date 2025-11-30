@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Stop Script for DeFi Lending & Borrowing Application
+    Stop Script for DeFi Lending and Borrowing Application
 .DESCRIPTION
     This script stops all running services (Hardhat node and Frontend)
     that were started by start-all.ps1
@@ -19,9 +19,12 @@ $ProcessInfoFile = Join-Path $ProjectRoot ".defi-processes.json"
 # Colors and formatting
 function Write-Header {
     param([string]$Text)
-    Write-Host "`n$("═" * 60)" -ForegroundColor Cyan
+    $line = "=" * 60
+    Write-Host ""
+    Write-Host $line -ForegroundColor Cyan
     Write-Host "  $Text" -ForegroundColor Cyan
-    Write-Host "$("═" * 60)`n" -ForegroundColor Cyan
+    Write-Host $line -ForegroundColor Cyan
+    Write-Host ""
 }
 
 function Write-Step {
@@ -32,17 +35,17 @@ function Write-Step {
 
 function Write-Success {
     param([string]$Text)
-    Write-Host "  ✓ " -ForegroundColor Green -NoNewline
+    Write-Host "  [OK] " -ForegroundColor Green -NoNewline
     Write-Host $Text -ForegroundColor White
 }
 
-function Write-Warning {
+function Write-WarnMsg {
     param([string]$Text)
-    Write-Host "  ⚠ " -ForegroundColor Yellow -NoNewline
+    Write-Host "  [!] " -ForegroundColor Yellow -NoNewline
     Write-Host $Text -ForegroundColor White
 }
 
-Write-Header "DeFi Lending & Borrowing - Shutdown"
+Write-Header "DeFi Lending and Borrowing - Shutdown"
 
 $ProcessesStopped = 0
 
@@ -60,7 +63,7 @@ if (Test-Path $ProcessInfoFile) {
             Write-Success "Hardhat node stopped"
             $ProcessesStopped++
         } else {
-            Write-Warning "Hardhat node process not found (may have already stopped)"
+            Write-WarnMsg "Hardhat node process not found (may have already stopped)"
         }
     }
     
@@ -73,7 +76,7 @@ if (Test-Path $ProcessInfoFile) {
             Write-Success "Frontend stopped"
             $ProcessesStopped++
         } else {
-            Write-Warning "Frontend process not found (may have already stopped)"
+            Write-WarnMsg "Frontend process not found (may have already stopped)"
         }
     }
     
@@ -81,7 +84,7 @@ if (Test-Path $ProcessInfoFile) {
     Remove-Item $ProcessInfoFile -Force
     Write-Success "Cleaned up process tracking file"
 } else {
-    Write-Warning "No process tracking file found"
+    Write-WarnMsg "No process tracking file found"
 }
 
 # Also try to stop any orphaned processes
@@ -118,14 +121,14 @@ if ($Port3000) {
 Write-Header "Shutdown Complete!"
 
 if ($ProcessesStopped -gt 0) {
-    Write-Host "✓ " -ForegroundColor Green -NoNewline
+    Write-Host "[OK] " -ForegroundColor Green -NoNewline
     Write-Host "Stopped $ProcessesStopped process(es)" -ForegroundColor White
 } else {
-    Write-Host "ℹ " -ForegroundColor Blue -NoNewline
+    Write-Host "[i] " -ForegroundColor Blue -NoNewline
     Write-Host "No running processes found" -ForegroundColor White
 }
 
-Write-Host "`nPorts 8545 and 3000 are now available." -ForegroundColor Gray
-Write-Host "Run " -NoNewline
-Write-Host ".\scripts\start-all.ps1" -ForegroundColor Cyan -NoNewline
-Write-Host " to restart services.`n"
+Write-Host ""
+Write-Host "Ports 8545 and 3000 are now available." -ForegroundColor Gray
+Write-Host "Run .\scripts\start-all.ps1 to restart services."
+Write-Host ""

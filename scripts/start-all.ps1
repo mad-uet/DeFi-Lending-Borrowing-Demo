@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    All-in-One Startup Script for DeFi Lending & Borrowing Application
+    All-in-One Startup Script for DeFi Lending and Borrowing Application
 .DESCRIPTION
     This script starts the Hardhat node, deploys contracts, copies artifacts,
     and starts the frontend - each in isolated terminal windows.
@@ -20,9 +20,12 @@ $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Pa
 # Colors and formatting
 function Write-Header {
     param([string]$Text)
-    Write-Host "`n$("═" * 60)" -ForegroundColor Cyan
+    $line = "=" * 60
+    Write-Host ""
+    Write-Host $line -ForegroundColor Cyan
     Write-Host "  $Text" -ForegroundColor Cyan
-    Write-Host "$("═" * 60)`n" -ForegroundColor Cyan
+    Write-Host $line -ForegroundColor Cyan
+    Write-Host ""
 }
 
 function Write-Step {
@@ -33,20 +36,20 @@ function Write-Step {
 
 function Write-Success {
     param([string]$Text)
-    Write-Host "  ✓ " -ForegroundColor Green -NoNewline
+    Write-Host "  [OK] " -ForegroundColor Green -NoNewline
     Write-Host $Text -ForegroundColor White
 }
 
-function Write-Error {
+function Write-ErrorMsg {
     param([string]$Text)
-    Write-Host "  ✗ " -ForegroundColor Red -NoNewline
+    Write-Host "  [X] " -ForegroundColor Red -NoNewline
     Write-Host $Text -ForegroundColor White
 }
 
 # Store process info for cleanup
 $ProcessInfoFile = Join-Path $ProjectRoot ".defi-processes.json"
 
-Write-Header "DeFi Lending & Borrowing - Startup"
+Write-Header "DeFi Lending and Borrowing - Startup"
 
 # Check if node_modules exist
 $RootNodeModules = Join-Path $ProjectRoot "node_modules"
@@ -73,7 +76,7 @@ Set-Location $ProjectRoot
 # ========================================
 Write-Step "1/4" "Starting Hardhat Node..."
 
-$NodeCommand = "cd '$ProjectRoot'; Write-Host ''; Write-Host '═══════════════════════════════════════' -ForegroundColor Cyan; Write-Host '  Hardhat Local Node (Chain ID: 31337)' -ForegroundColor Cyan; Write-Host '═══════════════════════════════════════' -ForegroundColor Cyan; Write-Host ''; npx hardhat node"
+$NodeCommand = "cd '$ProjectRoot'; Write-Host ''; Write-Host '=======================================' -ForegroundColor Cyan; Write-Host '  Hardhat Local Node (Chain ID: 31337)' -ForegroundColor Cyan; Write-Host '=======================================' -ForegroundColor Cyan; Write-Host ''; npx hardhat node"
 
 $NodeProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $NodeCommand -PassThru
 $NodePid = $NodeProcess.Id
@@ -99,7 +102,7 @@ while (-not $NodeReady -and $Retries -lt $MaxRetries) {
 }
 
 if (-not $NodeReady) {
-    Write-Error "Hardhat node failed to start within 30 seconds"
+    Write-ErrorMsg "Hardhat node failed to start within 30 seconds"
     exit 1
 }
 
@@ -119,12 +122,12 @@ if (-not $SkipDeploy) {
             Write-Host $DeployOutput -ForegroundColor Gray
         }
     } else {
-        Write-Error "Contract deployment failed"
+        Write-ErrorMsg "Contract deployment failed"
         Write-Host $DeployOutput -ForegroundColor Red
         exit 1
     }
 } else {
-    Write-Step "2/4" "Skipping deployment (--SkipDeploy flag)"
+    Write-Step "2/4" "Skipping deployment (SkipDeploy flag set)"
 }
 
 # ========================================
@@ -137,7 +140,7 @@ $CopyOutput = & npx ts-node scripts/copy-artifacts-to-frontend.ts 2>&1
 if ($LASTEXITCODE -eq 0) {
     Write-Success "Artifacts copied to frontend"
 } else {
-    Write-Error "Failed to copy artifacts"
+    Write-ErrorMsg "Failed to copy artifacts"
     Write-Host $CopyOutput -ForegroundColor Red
 }
 
@@ -148,14 +151,14 @@ if (-not $SkipFrontend) {
     Write-Step "4/4" "Starting Frontend (Next.js with Turbopack)..."
     
     $FrontendPath = Join-Path $ProjectRoot "frontend"
-    $FrontendCommand = "cd '$FrontendPath'; Write-Host ''; Write-Host '═══════════════════════════════════════' -ForegroundColor Magenta; Write-Host '  DeFi Frontend (Next.js + Turbopack)' -ForegroundColor Magenta; Write-Host '═══════════════════════════════════════' -ForegroundColor Magenta; Write-Host ''; npm run dev"
+    $FrontendCommand = "cd '$FrontendPath'; Write-Host ''; Write-Host '=======================================' -ForegroundColor Magenta; Write-Host '  DeFi Frontend (Next.js + Turbopack)' -ForegroundColor Magenta; Write-Host '=======================================' -ForegroundColor Magenta; Write-Host ''; npm run dev"
     
     $FrontendProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $FrontendCommand -PassThru
     $FrontendPid = $FrontendProcess.Id
     
     Write-Success "Frontend started (PID: $FrontendPid)"
 } else {
-    Write-Step "4/4" "Skipping frontend (--SkipFrontend flag)"
+    Write-Step "4/4" "Skipping frontend (SkipFrontend flag set)"
     $FrontendPid = $null
 }
 
@@ -173,8 +176,8 @@ $ProcessInfo | ConvertTo-Json | Out-File -FilePath $ProcessInfoFile -Encoding UT
 # ========================================
 Write-Header "Startup Complete!"
 
-Write-Host "🚀 Services Running:" -ForegroundColor Green
-Write-Host "─────────────────────────────────────────────────" -ForegroundColor Gray
+Write-Host "Services Running:" -ForegroundColor Green
+Write-Host "-------------------------------------------------" -ForegroundColor Gray
 Write-Host "   Hardhat Node:  " -NoNewline -ForegroundColor White
 Write-Host "http://127.0.0.1:8545" -ForegroundColor Cyan
 Write-Host "   Chain ID:      " -NoNewline -ForegroundColor White
@@ -183,12 +186,11 @@ if ($FrontendPid) {
     Write-Host "   Frontend:      " -NoNewline -ForegroundColor White
     Write-Host "http://localhost:3000" -ForegroundColor Magenta
 }
-Write-Host "─────────────────────────────────────────────────" -ForegroundColor Gray
+Write-Host "-------------------------------------------------" -ForegroundColor Gray
 
-Write-Host "`n📝 Quick Tips:" -ForegroundColor Yellow
-Write-Host "   • Import test accounts into MetaMask using private keys from node terminal"
-Write-Host "   • Use the Faucet tab to get test tokens"
-Write-Host "   • Run " -NoNewline
-Write-Host ".\scripts\stop-all.ps1" -ForegroundColor Cyan -NoNewline
-Write-Host " to stop all services"
+Write-Host ""
+Write-Host "Quick Tips:" -ForegroundColor Yellow
+Write-Host "   - Import test accounts into MetaMask using private keys from node terminal"
+Write-Host "   - Use the Faucet tab to get test tokens"
+Write-Host "   - Run .\scripts\stop-all.ps1 to stop all services"
 Write-Host ""
