@@ -24,10 +24,12 @@ An educational DeFi protocol demonstrating pool-based lending, over-collateraliz
 ### 1. Clone and Install
 
 ```bash
-git clone <repository-url>
+git clone [<repository-url>](https://github.com/mad-uet/DeFi-Lending-Borrowing-Demo.git)
 cd DeFi-LeBo-SimApp
 npm install
-cd frontend && npm install && cd ..
+cd frontend
+npm install
+cd ..
 ```
 
 ### 2. Compile Contracts

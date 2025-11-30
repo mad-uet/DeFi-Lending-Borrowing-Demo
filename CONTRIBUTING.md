@@ -50,12 +50,12 @@ Before contributing, ensure you have:
 1. **Fork the repository** on GitHub
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/DeFi-LeBo-SimApp.git
+   git clone https://github.com/mad-uet/DeFi-Lending-Borrowing-Demo.git
    cd DeFi-LeBo-SimApp
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/ORIGINAL_OWNER/DeFi-LeBo-SimApp.git
+   git remote add upstream https://github.com/mad-uet/DeFi-Lending-Borrowing-Demo.git
    ```
 
 ### Install Dependencies
