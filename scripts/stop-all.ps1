@@ -3,7 +3,8 @@
     Stop Script for DeFi Lending and Borrowing Application
 .DESCRIPTION
     This script stops all running services (Hardhat node and Frontend)
-    that were started by start-all.ps1
+    that were started by start-all.ps1. It checks across Windows Terminal,
+    PowerShell, and Command Prompt processes.
 .NOTES
     Run from the project root: .\scripts\stop-all.ps1
 #>
@@ -45,75 +46,161 @@ function Write-WarnMsg {
     Write-Host $Text -ForegroundColor White
 }
 
+function Stop-ProcessOnPort {
+    param([int]$Port)
+    $stopped = 0
+    $checkedPids = @{}
+    
+    # Method 1: Using Get-NetTCPConnection
+    try {
+        $connections = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue
+        if ($connections) {
+            foreach ($conn in $connections) {
+                $pid = $conn.OwningProcess
+                if ($pid -gt 0 -and -not $checkedPids.ContainsKey($pid)) {
+                    $checkedPids[$pid] = $true
+                    $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+                    if ($proc) {
+                        Write-Success "Stopping $($proc.ProcessName) on port $Port (PID: $pid)"
+                        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                        $stopped++
+                    }
+                }
+            }
+        }
+    } catch {
+        # Ignore errors
+    }
+    
+    # Method 2: Using netstat as fallback - with timeout
+    try {
+        $job = Start-Job -ScriptBlock { netstat -ano 2>$null }
+        $completed = Wait-Job $job -Timeout 3
+        if ($completed) {
+            $netstatOutput = Receive-Job $job | Select-String ":$Port\s"
+            foreach ($line in $netstatOutput) {
+                if ($line -match '\s(\d+)\s*$') {
+                    $pid = [int]$Matches[1]
+                    if ($pid -gt 0 -and -not $checkedPids.ContainsKey($pid)) {
+                        $checkedPids[$pid] = $true
+                        $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+                        if ($proc) {
+                            Write-Success "Stopping $($proc.ProcessName) on port $Port (PID: $pid) [netstat]"
+                            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+                            $stopped++
+                        }
+                    }
+                }
+            }
+        }
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
+    } catch {
+        # Ignore errors
+    }
+    
+    return $stopped
+}
+
+function Stop-NodeProcesses {
+    $stopped = 0
+    
+    # Find and stop node.exe processes running hardhat or next
+    $nodeProcesses = Get-Process -Name "node" -ErrorAction SilentlyContinue
+    foreach ($proc in $nodeProcesses) {
+        try {
+            $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($proc.Id)" -ErrorAction SilentlyContinue).CommandLine
+            if ($cmdLine -match "hardhat|next") {
+                Write-Success "Stopping node process: $($proc.Id) - $cmdLine"
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                $stopped++
+            }
+        } catch {
+            # Skip if we can't get command line
+        }
+    }
+    
+    return $stopped
+}
+
+function Stop-TerminalProcesses {
+    param([int]$ParentPid)
+    $stopped = 0
+    
+    if ($ParentPid -le 0) { return 0 }
+    
+    # Get all child processes of the parent (handles Windows Terminal spawning)
+    $children = Get-CimInstance Win32_Process -Filter "ParentProcessId = $ParentPid" -ErrorAction SilentlyContinue
+    foreach ($child in $children) {
+        # Recursively stop children first
+        $stopped += Stop-TerminalProcesses -ParentPid $child.ProcessId
+        
+        $proc = Get-Process -Id $child.ProcessId -ErrorAction SilentlyContinue
+        if ($proc) {
+            Write-Success "Stopping child process: $($proc.ProcessName) (PID: $($child.ProcessId))"
+            Stop-Process -Id $child.ProcessId -Force -ErrorAction SilentlyContinue
+            $stopped++
+        }
+    }
+    
+    # Stop the parent itself
+    $parentProc = Get-Process -Id $ParentPid -ErrorAction SilentlyContinue
+    if ($parentProc) {
+        Stop-Process -Id $ParentPid -Force -ErrorAction SilentlyContinue
+        $stopped++
+    }
+    
+    return $stopped
+}
+
 Write-Header "DeFi Lending and Borrowing - Shutdown"
 
 $ProcessesStopped = 0
 
-# Try to read saved process info
+# Step 1: Try to read saved process info and stop by PID tree
+Write-Step "1/4" "Checking saved process information..."
+
 if (Test-Path $ProcessInfoFile) {
-    Write-Step "1/3" "Reading process information..."
     $ProcessInfo = Get-Content $ProcessInfoFile | ConvertFrom-Json
     
-    # Stop Hardhat Node
     if ($ProcessInfo.NodePid) {
-        Write-Step "2/3" "Stopping Hardhat Node (PID: $($ProcessInfo.NodePid))..."
-        $NodeProcess = Get-Process -Id $ProcessInfo.NodePid -ErrorAction SilentlyContinue
-        if ($NodeProcess) {
-            Stop-Process -Id $ProcessInfo.NodePid -Force
-            Write-Success "Hardhat node stopped"
-            $ProcessesStopped++
-        } else {
-            Write-WarnMsg "Hardhat node process not found (may have already stopped)"
-        }
+        Write-Step "    " "Stopping Hardhat Node tree (PID: $($ProcessInfo.NodePid))..."
+        $ProcessesStopped += Stop-TerminalProcesses -ParentPid $ProcessInfo.NodePid
     }
     
-    # Stop Frontend
     if ($ProcessInfo.FrontendPid) {
-        Write-Step "3/3" "Stopping Frontend (PID: $($ProcessInfo.FrontendPid))..."
-        $FrontendProcess = Get-Process -Id $ProcessInfo.FrontendPid -ErrorAction SilentlyContinue
-        if ($FrontendProcess) {
-            Stop-Process -Id $ProcessInfo.FrontendPid -Force
-            Write-Success "Frontend stopped"
-            $ProcessesStopped++
-        } else {
-            Write-WarnMsg "Frontend process not found (may have already stopped)"
-        }
+        Write-Step "    " "Stopping Frontend tree (PID: $($ProcessInfo.FrontendPid))..."
+        $ProcessesStopped += Stop-TerminalProcesses -ParentPid $ProcessInfo.FrontendPid
     }
     
-    # Cleanup process info file
-    Remove-Item $ProcessInfoFile -Force
+    Remove-Item $ProcessInfoFile -Force -ErrorAction SilentlyContinue
     Write-Success "Cleaned up process tracking file"
 } else {
-    Write-WarnMsg "No process tracking file found"
+    Write-WarnMsg "No process tracking file found - will scan for processes"
 }
 
-# Also try to stop any orphaned processes
-Write-Host "`n" -NoNewline
-Write-Step "CLEANUP" "Checking for orphaned processes..."
+# Step 2: Stop processes by port (most reliable method)
+Write-Step "2/4" "Checking port 8545 (Hardhat node)..."
+$ProcessesStopped += Stop-ProcessOnPort -Port 8545
 
-# Stop any node processes on port 8545
-$Port8545 = Get-NetTCPConnection -LocalPort 8545 -ErrorAction SilentlyContinue
-if ($Port8545) {
-    foreach ($conn in $Port8545) {
-        $process = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
-        if ($process) {
-            Write-Success "Stopping process on port 8545: $($process.ProcessName) (PID: $($process.Id))"
-            Stop-Process -Id $process.Id -Force
+Write-Step "3/4" "Checking port 3000 (Frontend)..."
+$ProcessesStopped += Stop-ProcessOnPort -Port 3000
+
+# Step 3: Find any remaining node processes running our apps
+Write-Step "4/4" "Scanning for remaining node processes..."
+$ProcessesStopped += Stop-NodeProcesses
+
+# Also check for any powershell/cmd windows with our title
+$shellProcesses = Get-Process -Name "powershell", "pwsh", "cmd", "WindowsTerminal" -ErrorAction SilentlyContinue
+foreach ($proc in $shellProcesses) {
+    try {
+        $title = $proc.MainWindowTitle
+        if ($title -match "Hardhat|DeFi Frontend|hardhat node") {
+            Write-Success "Stopping shell with matching title: $title (PID: $($proc.Id))"
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             $ProcessesStopped++
         }
-    }
-}
-
-# Stop any node processes on port 3000
-$Port3000 = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
-if ($Port3000) {
-    foreach ($conn in $Port3000) {
-        $process = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
-        if ($process) {
-            Write-Success "Stopping process on port 3000: $($process.ProcessName) (PID: $($process.Id))"
-            Stop-Process -Id $process.Id -Force
-            $ProcessesStopped++
-        }
+    } catch {
+        # Skip if we can't get window title
     }
 }
 
@@ -128,7 +215,17 @@ if ($ProcessesStopped -gt 0) {
     Write-Host "No running processes found" -ForegroundColor White
 }
 
+# Final verification
+Start-Sleep -Milliseconds 500
+$port8545Still = Get-NetTCPConnection -LocalPort 8545 -ErrorAction SilentlyContinue
+$port3000Still = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
+
 Write-Host ""
-Write-Host "Ports 8545 and 3000 are now available." -ForegroundColor Gray
+if ($port8545Still -or $port3000Still) {
+    Write-Host "[!] " -ForegroundColor Yellow -NoNewline
+    Write-Host "Some ports may still be in use. Try running with -Force or wait a moment." -ForegroundColor White
+} else {
+    Write-Host "Ports 8545 and 3000 are now available." -ForegroundColor Gray
+}
 Write-Host "Run .\scripts\start-all.ps1 to restart services."
 Write-Host ""

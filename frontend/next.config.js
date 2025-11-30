@@ -12,7 +12,19 @@ const nextConfig = {
     // Turbopack configuration (used when running with --turbo)
     turbo: {
       resolveAlias: {
-        // Aliases are automatically handled
+        // Node.js module fallbacks for browser (same as webpack config)
+        fs: { browser: '' },
+        net: { browser: '' },
+        tls: { browser: '' },
+        crypto: { browser: '' },
+        stream: { browser: '' },
+        url: { browser: '' },
+        zlib: { browser: '' },
+        http: { browser: '' },
+        https: { browser: '' },
+        assert: { browser: '' },
+        os: { browser: '' },
+        path: { browser: '' },
       },
     },
   },
