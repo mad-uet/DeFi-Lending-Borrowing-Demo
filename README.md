@@ -27,30 +27,59 @@ An educational DeFi protocol demonstrating pool-based lending, over-collateraliz
 git clone <repository-url>
 cd DeFi-LeBo-SimApp
 npm install
+cd frontend && npm install && cd ..
 ```
 
 ### 2. Compile Contracts
 
 ```bash
-npx hardhat compile
+npm run compile
 ```
 
 ### 3. Run Tests (Optional)
 
 ```bash
-npx hardhat test
+npm test
 ```
 
 Expected: **233+ tests passing**
 
 ## 🚀 Quick Start
 
-### Start Local Blockchain
+### One-Command Startup (Recommended)
+
+The easiest way to start everything:
+
+```powershell
+npm start
+# or
+.\scripts\start-all.ps1
+```
+
+This single command will:
+1. ✅ Start Hardhat node in a new terminal
+2. ✅ Deploy all contracts automatically
+3. ✅ Copy artifacts to frontend
+4. ✅ Start Next.js frontend with Turbopack (10x faster)
+
+**To stop all services:**
+
+```powershell
+npm run stop
+# or
+.\scripts\stop-all.ps1
+```
+
+### Manual Setup (Alternative)
+
+If you prefer manual control:
+
+#### Start Local Blockchain
 
 In one terminal, start a Hardhat node:
 
 ```bash
-npx hardhat node
+npm run node
 ```
 
 This will:
@@ -64,44 +93,21 @@ This will:
 In a **new terminal**, deploy the contracts:
 
 ```bash
-npx hardhat run scripts/deploy-lending-pool.ts --network localhost
+npm run deploy:all
 ```
 
-This will deploy all contracts and output their addresses. **Save these addresses** for frontend configuration.
+This will deploy all contracts and output their addresses.
 
 ### Copy Contract Artifacts
 
 ```bash
-npx ts-node scripts/copy-artifacts-to-frontend.ts
+npm run copy:artifacts
 ```
 
-### Configure Frontend
-
-1. Navigate to frontend directory:
+### Start Frontend
 
 ```bash
-cd frontend
-```
-
-2. Create `.env.local` file with deployed contract addresses:
-
-```bash
-NEXT_PUBLIC_LENDING_POOL_ADDRESS=0x...
-NEXT_PUBLIC_LAR_TOKEN_ADDRESS=0x...
-NEXT_PUBLIC_INTEREST_RATE_MODEL_ADDRESS=0x...
-NEXT_PUBLIC_PRICE_ORACLE_ADDRESS=0x...
-NEXT_PUBLIC_WETH_ADDRESS=0x...
-NEXT_PUBLIC_DAI_ADDRESS=0x...
-NEXT_PUBLIC_USDC_ADDRESS=0x...
-NEXT_PUBLIC_LINK_ADDRESS=0x...
-NEXT_PUBLIC_CHAIN_ID=31337
-```
-
-3. Install frontend dependencies and start:
-
-```bash
-npm install
-npm run dev
+npm run frontend:dev
 ```
 
 The application will be available at `http://localhost:3000`

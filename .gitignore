@@ -1,24 +1,85 @@
-node_modules
-.env
-coverage
+# ================================
+# Dependencies
+# ================================
+node_modules/
+.pnpm-store/
+
+# ================================
+# Build Outputs
+# ================================
+# Hardhat
+artifacts/
+cache/
+typechain-types/
+coverage/
 coverage.json
-typechain-types
-cache
-artifacts
-dist
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# ================================
+# Environment & Config
+# ================================
+.env
+.env.local
+.env.*.local
+*.env
+
+# ================================
+# Logs & Reports
+# ================================
+log/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 gas-report.txt
+test-results.json
+report.md
 
-# Hardhat files
-cache
-artifacts
-
-# TypeScript
-*.tsbuildinfo
-
-# IDE
-.vscode
-.idea
+# ================================
+# IDE & Editor
+# ================================
+.vscode/
+.idea/
 *.swp
 *.swo
 *~
 .DS_Store
+Thumbs.db
+
+# ================================
+# TypeScript
+# ================================
+*.tsbuildinfo
+*.js.map
+*.d.ts.map
+
+# ================================
+# Plans & Documentation (Dev only)
+# ================================
+plans/
+
+# ================================
+# Phase/Checklist Files (Dev only)
+# ================================
+PHASE*_CHECKLIST.md
+PHASE*_SUMMARY.md
+PHASE*_COMPLETE.md
+
+# ================================
+# Temporary & Generated
+# ================================
+.defi-processes.json
+deployments/*.json
+!deployments/.gitkeep
+
+# ================================
+# Hardhat specific
+# ================================
+*.pem
+secrets.json

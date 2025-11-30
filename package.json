@@ -7,8 +7,18 @@
     "test": "hardhat test",
     "test:coverage": "hardhat coverage",
     "compile": "hardhat compile",
+    "compile:clean": "hardhat clean && hardhat compile",
+    "node": "hardhat node --no-deploy",
+    "node:verbose": "hardhat node",
     "deploy:local": "hardhat run scripts/deploy-mocks.ts --network localhost",
-    "node": "hardhat node"
+    "deploy:all": "hardhat run scripts/deploy-all.ts --network localhost",
+    "deploy:lending": "hardhat run scripts/deploy-lending-pool.ts --network localhost",
+    "copy:artifacts": "npx ts-node scripts/copy-artifacts-to-frontend.ts",
+    "start": "powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1",
+    "stop": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
+    "clean": "hardhat clean && if (Test-Path cache) { Remove-Item -Recurse -Force cache }",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build"
   },
   "keywords": [
     "defi",

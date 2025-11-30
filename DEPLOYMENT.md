@@ -19,10 +19,34 @@ This guide explains how to deploy the DeFi Lending & Borrowing Platform to diffe
 - Git repository cloned
 - Dependencies installed (`npm install`)
 
-### Step 1: Start Hardhat Node
+### Quick Start (Recommended)
+
+The fastest way to get everything running:
+
+```powershell
+npm start
+```
+
+This single command will:
+1. Start a local Hardhat node in a new terminal
+2. Deploy all contracts automatically  
+3. Copy artifacts to frontend
+4. Start Next.js frontend with Turbopack (10x faster builds)
+
+**To stop all services:**
+
+```powershell
+npm run stop
+```
+
+### Manual Deployment (Alternative)
+
+If you prefer manual control over each step:
+
+#### Step 1: Start Hardhat Node
 
 ```bash
-npx hardhat node
+npm run node
 ```
 
 This starts a local blockchain at `http://127.0.0.1:8545` with:
@@ -37,7 +61,7 @@ This starts a local blockchain at `http://127.0.0.1:8545` with:
 In a **new terminal**:
 
 ```bash
-npx hardhat run scripts/deploy-lending-pool.ts --network localhost
+npm run deploy:all
 ```
 
 **Expected Output**:

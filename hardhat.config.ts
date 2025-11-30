@@ -11,16 +11,30 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      // Reduce compilation output verbosity
+      outputSelection: {
+        "*": {
+          "*": ["abi", "evm.bytecode", "evm.deployedBytecode"],
+        },
+      },
     },
   },
   networks: {
     hardhat: {
       chainId: 31337,
       allowUnlimitedContractSize: true,
+      // Faster block mining for development
+      mining: {
+        auto: true,
+        interval: 0,
+      },
+      // Reduce logging noise
+      loggingEnabled: false,
     },
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
+      timeout: 60000,
     },
   },
   gasReporter: {
@@ -38,6 +52,10 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: "typechain-types",
     target: "ethers-v6",
+  },
+  // Mocha test configuration
+  mocha: {
+    timeout: 40000,
   },
 };
 
