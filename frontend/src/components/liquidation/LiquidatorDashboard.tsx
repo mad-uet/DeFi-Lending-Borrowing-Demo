@@ -375,6 +375,30 @@ export function LiquidatorDashboard() {
         </div>
       </div>
 
+      {/* Important Account Warning */}
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl flex-shrink-0">⚠️</span>
+          <div className="flex-1">
+            <h3 className="font-semibold text-amber-400 mb-1">
+              Separate Account Required for Liquidations
+            </h3>
+            <p className="text-sm text-gray-300 mb-2">
+              The smart contract prevents users from liquidating their own positions (self-liquidation is blocked). 
+              To execute liquidations, you must:
+            </p>
+            <ul className="text-sm text-gray-400 space-y-1 list-disc list-inside">
+              <li>Use a <strong className="text-white">different wallet account</strong> than the borrower</li>
+              <li>Switch accounts in MetaMask or your wallet provider</li>
+              <li>The liquidator account needs tokens to repay the debt</li>
+            </ul>
+            <p className="text-xs text-gray-500 mt-3 italic">
+              💡 Tip: In a real scenario, liquidators are typically dedicated bots or other users, not the borrower themselves.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left Column - Controls & Stats */}

@@ -7,9 +7,11 @@ import { useLiquidatorBot, useIsLiquidatorBotAvailable } from '../hooks/useLiqui
 interface LiquidationWarningProps {
   onDismiss?: () => void;
   showTrend?: boolean;
+  onAddCollateral?: () => void;
+  onRepayDebt?: () => void;
 }
 
-export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationWarningProps) {
+export function LiquidationWarning({ onDismiss, showTrend = true, onAddCollateral, onRepayDebt }: LiquidationWarningProps) {
   const { isAtRisk, isDanger, isLiquidatable, healthFactorTrend, isMonitoring, liquidationEligibleSince } = useLiquidationMonitor();
   const botAvailable = useIsLiquidatorBotAvailable();
   
@@ -156,13 +158,21 @@ export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationW
             )}
             
             <div className="flex flex-wrap gap-2">
-              <button className="px-3 py-1.5 bg-green-500 hover:bg-green-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1">
+              <button 
+                onClick={onAddCollateral}
+                className="px-3 py-1.5 bg-green-500 hover:bg-green-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!onAddCollateral}
+              >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
                 Add Collateral
               </button>
-              <button className="px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1">
+              <button 
+                onClick={onRepayDebt}
+                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!onRepayDebt}
+              >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -226,10 +236,10 @@ export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationW
   );
 }
 
-export function LiquidationWarningBanner() {
+export function LiquidationWarningBanner({ onAddCollateral, onRepayDebt }: { onAddCollateral?: () => void; onRepayDebt?: () => void }) {
   return (
     <div className="animate-slide-in-up">
-      <LiquidationWarning />
+      <LiquidationWarning onAddCollateral={onAddCollateral} onRepayDebt={onRepayDebt} />
     </div>
   );
 }

@@ -94,7 +94,10 @@ export default function Home() {
             <div className={`grid gap-6 ${isEducationalMode ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1 lg:grid-cols-3'}`}>
               {/* Liquidation Warning Banner - Full Width */}
               <div className={isEducationalMode ? 'lg:col-span-4' : 'lg:col-span-3'}>
-                <LiquidationWarningBanner />
+                <LiquidationWarningBanner 
+                  onAddCollateral={() => setActiveTab('supply')}
+                  onRepayDebt={() => setActiveTab('borrow')}
+                />
               </div>
 
               {/* Dashboard Stats - Full Width */}
