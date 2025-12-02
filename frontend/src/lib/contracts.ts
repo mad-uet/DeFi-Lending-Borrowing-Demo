@@ -11,6 +11,7 @@ export const LENDING_POOL_ABI = [
   "function withdraw(address token, uint256 amount) external",
   "function borrow(address token, uint256 amount) external",
   "function repay(address token, uint256 amount) external",
+  "function liquidate(address borrower, address debtToken, uint256 debtAmount, address collateralToken) external",
   "function getUserDeposit(address user, address token) external view returns (uint256)",
   "function getUserBorrow(address user, address token) external view returns (uint256)",
   "function getTokenBalance(address token) external view returns (uint256)",
@@ -24,10 +25,13 @@ export const LENDING_POOL_ABI = [
   "function totalDeposits(address) external view returns (uint256)",
   "function totalBorrows(address) external view returns (uint256)",
   "function getUserAccountData(address user) external view returns (uint256 totalCollateralUSD, uint256 totalDebtUSD, uint256 availableBorrowsUSD, uint256 healthFactor)",
+  "function getLiquidationBonus() external view returns (uint256)",
+  "function getMaxLiquidationCloseFactor() external view returns (uint256)",
   "event Deposit(address indexed user, address indexed token, uint256 amount, uint256 larMinted)",
   "event Withdraw(address indexed user, address indexed token, uint256 amount)",
   "event Borrow(address indexed user, address indexed token, uint256 amount, uint256 interestRate)",
-  "event Repay(address indexed user, address indexed token, uint256 amount, uint256 interest)"
+  "event Repay(address indexed user, address indexed token, uint256 amount, uint256 interest)",
+  "event Liquidation(address indexed borrower, address indexed liquidator, address indexed debtToken, uint256 debtRepaid, address collateralToken, uint256 collateralSeized, uint256 liquidationBonus)"
 ];
 
 export const LAR_TOKEN_ABI = [
@@ -118,4 +122,29 @@ export const CHAIN_NAMES: Record<number, string> = {
   1: 'Ethereum Mainnet',
   31337: 'Hardhat Local',
   11155111: 'Sepolia Testnet',
+};
+
+// Liquidation Constants (matching smart contract values)
+export const LIQUIDATION_CONFIG = {
+  LIQUIDATION_BONUS: 0.05, // 5% bonus for liquidators (500 basis points)
+  MAX_CLOSE_FACTOR: 0.5, // 50% of debt can be liquidated at once (5000 basis points)
+  HEALTH_FACTOR_THRESHOLD: 1.0, // Position is liquidatable below this
+  
+  // Configurable values for simulation/demo
+  DEFAULT_LIQUIDATION_DELAY_MS: 3000, // 3 seconds delay before auto-liquidation
+  MIN_LIQUIDATION_DELAY_MS: 1000, // Minimum 1 second
+  MAX_LIQUIDATION_DELAY_MS: 30000, // Maximum 30 seconds
+};
+
+// Simulated liquidator wallet (for demo purposes)
+export const SIMULATED_LIQUIDATOR = {
+  name: 'LiquidatorBot',
+  // This is a placeholder - in production this would be a real wallet
+  // For the simulation, we'll generate a random address
+  initialBalance: {
+    WETH: '100',
+    DAI: '100000',
+    USDC: '100000',
+    LINK: '1000',
+  },
 };
