@@ -14,6 +14,15 @@ interface ILendingPool {
     event Repay(address indexed user, address indexed token, uint256 amount, uint256 interest);
     event TokenAdded(address indexed token, address indexed priceFeed, uint16 ltv);
     event TokenDeactivated(address indexed token);
+    event Liquidation(
+        address indexed borrower,
+        address indexed liquidator,
+        address indexed debtToken,
+        uint256 debtRepaid,
+        address collateralToken,
+        uint256 collateralSeized,
+        uint256 liquidationBonus
+    );
 
     // Structs
     struct UserAccountData {
@@ -28,6 +37,12 @@ interface ILendingPool {
     function withdraw(address token, uint256 amount) external;
     function borrow(address token, uint256 amount) external;
     function repay(address token, uint256 amount) external;
+    function liquidate(
+        address borrower,
+        address debtToken,
+        uint256 debtAmount,
+        address collateralToken
+    ) external;
 
     // View functions
     function getUserAccountData(address user) external view returns (

@@ -45,6 +45,8 @@ contract LendingPool is ILendingPool, Ownable {
     uint256 private constant USD_PRECISION = 1e18; // Internal USD calculation precision
     uint256 private constant BASIS_POINTS = 10000;
     uint256 private constant HEALTH_FACTOR_PRECISION = 1e18;
+    uint256 private constant LIQUIDATION_BONUS = 500; // 5% bonus for liquidators (in basis points)
+    uint256 private constant MAX_LIQUIDATION_CLOSE_FACTOR = 5000; // 50% of debt can be liquidated at once
 
     /**
      * @notice Constructor
@@ -199,6 +201,119 @@ contract LendingPool is ILendingPool, Ownable {
         }
 
         emit Repay(msg.sender, token, repayAmount, interest);
+    }
+
+    /**
+     * @notice Liquidate an undercollateralized position
+     * @param borrower Address of the borrower to liquidate
+     * @param debtToken Address of the debt token to repay
+     * @param debtAmount Amount of debt to repay (max 50% of total debt)
+     * @param collateralToken Address of the collateral token to seize
+     */
+    function liquidate(
+        address borrower,
+        address debtToken,
+        uint256 debtAmount,
+        address collateralToken
+    ) external override {
+        require(borrower != msg.sender, "Cannot liquidate yourself");
+        require(debtAmount > 0, "Amount must be greater than 0");
+        
+        // Check borrower has debt in this token
+        uint256 borrowerDebt = userReserves[borrower][debtToken].borrowed;
+        require(borrowerDebt > 0, "No debt to liquidate");
+        
+        // Check borrower has collateral in the specified token
+        require(userReserves[borrower][collateralToken].deposited > 0, "Borrower has no collateral in this token");
+        
+        // Check health factor is below 1.0 (position is liquidatable)
+        require(this.calculateHealthFactor(borrower) < HEALTH_FACTOR_PRECISION, "Health factor is healthy");
+        
+        // Check liquidation amount doesn't exceed close factor (50%)
+        require(debtAmount <= (borrowerDebt * MAX_LIQUIDATION_CLOSE_FACTOR) / BASIS_POINTS, "Exceeds max liquidation amount");
+        
+        // Calculate and execute the liquidation
+        _executeLiquidation(borrower, debtToken, debtAmount, collateralToken);
+    }
+    
+    /**
+     * @notice Internal function to execute liquidation logic
+     */
+    function _executeLiquidation(
+        address borrower,
+        address debtToken,
+        uint256 debtAmount,
+        address collateralToken
+    ) internal {
+        // Calculate collateral to seize with bonus
+        (uint256 collateralWithBonus, uint256 bonusAmount) = _calculateLiquidationCollateral(
+            debtToken, 
+            debtAmount, 
+            collateralToken
+        );
+        
+        // Ensure borrower has enough collateral
+        require(collateralWithBonus <= userReserves[borrower][collateralToken].deposited, "Insufficient collateral to seize");
+        
+        // Transfer debt tokens from liquidator to contract
+        IERC20(debtToken).transferFrom(msg.sender, address(this), debtAmount);
+        
+        // Update borrower's debt
+        userReserves[borrower][debtToken].borrowed -= debtAmount;
+        totalBorrows[debtToken] -= debtAmount;
+        
+        // Update borrower's collateral (deduct seized amount)
+        userReserves[borrower][collateralToken].deposited -= collateralWithBonus;
+        totalDeposits[collateralToken] -= collateralWithBonus;
+        
+        // Burn LAR tokens from borrower (proportional to collateral seized)
+        _burnBorrowerLAR(borrower, collateralToken, collateralWithBonus);
+        
+        // Transfer collateral to liquidator
+        IERC20(collateralToken).transfer(msg.sender, collateralWithBonus);
+        
+        emit Liquidation(
+            borrower,
+            msg.sender,
+            debtToken,
+            debtAmount,
+            collateralToken,
+            collateralWithBonus,
+            bonusAmount
+        );
+    }
+    
+    /**
+     * @notice Calculate collateral amount to seize with bonus
+     */
+    function _calculateLiquidationCollateral(
+        address debtToken,
+        uint256 debtAmount,
+        address collateralToken
+    ) internal view returns (uint256 collateralWithBonus, uint256 bonusAmount) {
+        uint256 debtValueUSD = _calculateUSDValue(debtToken, debtAmount);
+        uint256 collateralPrice = priceOracle.getPrice(collateralToken);
+        uint8 collateralDecimals = IERC20Metadata(collateralToken).decimals();
+        
+        // Base collateral amount (without bonus)
+        uint256 baseCollateral = (debtValueUSD * (10 ** collateralDecimals)) / collateralPrice;
+        
+        // Add liquidation bonus (5%)
+        collateralWithBonus = (baseCollateral * (BASIS_POINTS + LIQUIDATION_BONUS)) / BASIS_POINTS;
+        bonusAmount = collateralWithBonus - baseCollateral;
+    }
+    
+    /**
+     * @notice Burn LAR tokens from borrower during liquidation
+     */
+    function _burnBorrowerLAR(address borrower, address collateralToken, uint256 collateralAmount) internal {
+        uint256 collateralValueUSD = _calculateUSDValue(collateralToken, collateralAmount);
+        uint256 borrowerLarBalance = larToken.balanceOf(borrower);
+        uint256 larToBurn = collateralValueUSD > borrowerLarBalance ? borrowerLarBalance : collateralValueUSD;
+        
+        if (larToBurn > 0) {
+            larToken.burn(borrower, larToBurn);
+        }
     }
 
     /**
@@ -372,6 +487,22 @@ contract LendingPool is ILendingPool, Ownable {
      */
     function getUserLARRewards(address user) external view returns (uint256) {
         return larToken.balanceOf(user);
+    }
+
+    /**
+     * @notice Get the liquidation bonus percentage
+     * @return Liquidation bonus in basis points (500 = 5%)
+     */
+    function getLiquidationBonus() external pure returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
+    /**
+     * @notice Get the max liquidation close factor
+     * @return Max close factor in basis points (5000 = 50%)
+     */
+    function getMaxLiquidationCloseFactor() external pure returns (uint256) {
+        return MAX_LIQUIDATION_CLOSE_FACTOR;
     }
 
     // Internal helper functions
