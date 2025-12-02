@@ -14,9 +14,11 @@ interface HealthFactorTrend {
 interface LiquidationMonitorState {
   isAtRisk: boolean;
   isDanger: boolean;
+  isLiquidatable: boolean; // NEW: True when HF < 1.0
   healthFactorTrend: HealthFactorTrend;
   lastAlertTime: number | null;
   alertCooldown: boolean;
+  liquidationEligibleSince: number | null; // Timestamp when position became liquidatable
 }
 
 export function useLiquidationMonitor() {
@@ -29,6 +31,7 @@ export function useLiquidationMonitor() {
   const [state, setState] = useState<LiquidationMonitorState>({
     isAtRisk: false,
     isDanger: false,
+    isLiquidatable: false,
     healthFactorTrend: {
       current: Infinity,
       previous: Infinity,
@@ -37,11 +40,13 @@ export function useLiquidationMonitor() {
     },
     lastAlertTime: null,
     alertCooldown: false,
+    liquidationEligibleSince: null,
   });
 
   const ALERT_COOLDOWN_MS = 30000; // 30 seconds between alerts
   const RISK_THRESHOLD = 1.2;
-  const DANGER_THRESHOLD = 1.0;
+  const DANGER_THRESHOLD = 1.05;
+  const LIQUIDATION_THRESHOLD = 1.0; // Position is liquidatable below this
 
   useEffect(() => {
     if (isLoading) return;
@@ -64,13 +69,27 @@ export function useLiquidationMonitor() {
 
     const isAtRisk = isFinite(currentHF) && currentHF < RISK_THRESHOLD;
     const isDanger = isFinite(currentHF) && currentHF < DANGER_THRESHOLD;
+    const isLiquidatable = isFinite(currentHF) && currentHF < LIQUIDATION_THRESHOLD;
+
+    // Track when position became liquidatable
+    let liquidationEligibleSince = state.liquidationEligibleSince;
+    if (isLiquidatable && !state.isLiquidatable) {
+      // Just became liquidatable
+      liquidationEligibleSince = Date.now();
+    } else if (!isLiquidatable && state.isLiquidatable) {
+      // No longer liquidatable
+      liquidationEligibleSince = null;
+    }
 
     // Check if we should send an alert
     const now = Date.now();
     const canAlert = now - lastAlertTimeRef.current > ALERT_COOLDOWN_MS;
 
-    // Send alert if entering risk zone and not in cooldown
-    if (isDanger && canAlert && !state.isDanger) {
+    // Send alert if entering liquidation zone or danger zone
+    if (isLiquidatable && canAlert && !state.isLiquidatable) {
+      notifyLiquidationRisk(currentHF);
+      lastAlertTimeRef.current = now;
+    } else if (isDanger && !isLiquidatable && canAlert && !state.isDanger) {
       notifyLiquidationRisk(currentHF);
       lastAlertTimeRef.current = now;
     } else if (isAtRisk && !isDanger && canAlert && !state.isAtRisk) {
@@ -82,6 +101,7 @@ export function useLiquidationMonitor() {
     setState({
       isAtRisk,
       isDanger,
+      isLiquidatable,
       healthFactorTrend: {
         current: currentHF,
         previous: previousHF ?? Infinity,
@@ -90,6 +110,7 @@ export function useLiquidationMonitor() {
       },
       lastAlertTime: lastAlertTimeRef.current,
       alertCooldown: !canAlert,
+      liquidationEligibleSince,
     });
 
     previousHealthFactorRef.current = currentHF;
