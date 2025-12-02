@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLiquidationMonitor } from '../hooks/useLiquidationMonitor';
+import { useLiquidatorBot, useIsLiquidatorBotAvailable } from '../hooks/useLiquidatorBot';
 
 interface LiquidationWarningProps {
   onDismiss?: () => void;
@@ -9,7 +10,16 @@ interface LiquidationWarningProps {
 }
 
 export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationWarningProps) {
-  const { isAtRisk, isDanger, healthFactorTrend, isMonitoring } = useLiquidationMonitor();
+  const { isAtRisk, isDanger, isLiquidatable, healthFactorTrend, isMonitoring, liquidationEligibleSince } = useLiquidationMonitor();
+  const botAvailable = useIsLiquidatorBotAvailable();
+  
+  // Safely use the hook - it will be available since we checked above
+  const botState = botAvailable ? useLiquidatorBot() : null;
+  const isActive = botState?.isActive ?? false;
+  const autoLiquidate = botState?.autoLiquidate ?? false;
+  const pendingLiquidation = botState?.pendingLiquidation ?? null;
+  const liquidationDelay = botState?.liquidationDelay ?? 3000;
+  
   const [dismissed, setDismissed] = useState(false);
   const [shake, setShake] = useState(false);
 
@@ -71,10 +81,15 @@ export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationW
     }
   };
 
-  if (isDanger) {
+  // Handle both isLiquidatable (HF < 1.0) and isDanger (HF < 1.05)
+  if (isLiquidatable || isDanger) {
+    const isBeingLiquidated = pendingLiquidation !== null;
+    const countdownSeconds = pendingLiquidation ? (pendingLiquidation.countdown / 1000).toFixed(1) : null;
+    const countdownProgress = pendingLiquidation ? (pendingLiquidation.countdown / liquidationDelay) * 100 : 0;
+    
     return (
       <div 
-        className={`relative overflow-hidden rounded-lg border-2 border-red-500 bg-gradient-to-r from-red-900/90 via-red-800/90 to-red-900/90 p-4 shadow-lg shadow-red-500/20 ${shake ? 'animate-wiggle' : ''}`}
+        className={`relative overflow-hidden rounded-lg border-2 ${isLiquidatable ? 'border-red-600' : 'border-red-500'} bg-gradient-to-r from-red-900/90 via-red-800/90 to-red-900/90 p-4 shadow-lg shadow-red-500/20 ${shake ? 'animate-wiggle' : ''}`}
         role="alert"
       >
         {/* Animated danger stripes */}
@@ -83,7 +98,7 @@ export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationW
         <div className="relative flex items-start gap-3">
           {/* Pulsing warning icon */}
           <div className="flex-shrink-0 animate-pulse-glow">
-            <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center">
+            <div className={`w-10 h-10 rounded-full ${isLiquidatable ? 'bg-red-600' : 'bg-red-500'} flex items-center justify-center`}>
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -93,15 +108,52 @@ export function LiquidationWarning({ onDismiss, showTrend = true }: LiquidationW
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-bold text-red-100 animate-pulse">
-                ⚠️ LIQUIDATION IMMINENT
+                {isLiquidatable ? '🔴 LIQUIDATION ELIGIBLE' : '⚠️ LIQUIDATION IMMINENT'}
               </h3>
               {showTrend && getTrendIcon()}
             </div>
             
             <p className="text-red-200 text-sm mb-2">
               Your health factor is <strong className="text-white text-lg">{formatHealthFactor(healthFactorTrend.current)}</strong>.
-              Your position may be liquidated at any moment!
+              {isLiquidatable 
+                ? ' Your position CAN BE liquidated by anyone!'
+                : ' Your position may be liquidated at any moment!'
+              }
             </p>
+
+            {/* Bot Status Indicator */}
+            {isActive && isLiquidatable && (
+              <div className={`mb-3 p-2 rounded-lg ${isBeingLiquidated ? 'bg-yellow-500/30 border border-yellow-500/50' : 'bg-blue-500/20 border border-blue-500/30'}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🤖</span>
+                    <span className={`text-sm font-medium ${isBeingLiquidated ? 'text-yellow-300' : 'text-blue-300'}`}>
+                      {isBeingLiquidated ? 'Liquidation in Progress' : 'Liquidator Bot Active'}
+                    </span>
+                  </div>
+                  {isBeingLiquidated && (
+                    <span className="text-xl font-bold text-yellow-200 tabular-nums">
+                      {countdownSeconds}s
+                    </span>
+                  )}
+                </div>
+                
+                {isBeingLiquidated && (
+                  <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-yellow-500 h-2 rounded-full transition-all duration-100"
+                      style={{ width: `${countdownProgress}%` }}
+                    />
+                  </div>
+                )}
+                
+                {!isBeingLiquidated && autoLiquidate && (
+                  <p className="text-xs text-blue-300/80">
+                    Auto-liquidation enabled. Your position will be liquidated if health factor drops.
+                  </p>
+                )}
+              </div>
+            )}
             
             <div className="flex flex-wrap gap-2">
               <button className="px-3 py-1.5 bg-green-500 hover:bg-green-400 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1">
