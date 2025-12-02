@@ -474,6 +474,170 @@ When demonstrating this platform:
 
 ---
 
+## Scenario 7: Liquidation Flow & Liquidator Bot
+
+**Objective**: Demonstrate how liquidations work, including the liquidator bot simulation
+
+**Time**: ~12 minutes
+
+### Part A: Creating a Liquidatable Position
+
+**User A (Borrower)**:
+
+1. **Setup Initial Position**
+   - Connect with Account A
+   - Get 2 WETH from faucet ($4,000 value at $2,000/WETH)
+   - Supply all 2 WETH as collateral
+   - Borrowing power: $4,000 × 0.75 LTV = $3,000
+   - Note: Health Factor = ∞ (no debt)
+
+2. **Borrow Near Maximum Capacity**
+   - Borrow 2,500 DAI (~83% of borrowing power)
+   - Health Factor calculation:
+     ```
+     Collateral: 2 WETH × $2,000 × 0.80 threshold = $3,200
+     Debt: 2,500 DAI = $2,500
+     Health Factor = $3,200 / $2,500 = 1.28
+     ```
+   - Status: **Warning** (yellow) - risky but not liquidatable
+
+3. **Increase Risk (Optional)**
+   - Borrow additional 200 DAI (total: 2,700 DAI)
+   - New Health Factor = $3,200 / $2,700 = 1.185
+   - Status: **High Risk** - very close to liquidation threshold
+
+### Part B: Simulating Price Drop
+
+4. **Using the Price Simulation (if available)**
+   - Navigate to Simulation Panel on main dashboard
+   - Enable "Simulation Mode"
+   - Use price slider to reduce WETH price
+   - Drop WETH from $2,000 to $1,500 (-25%)
+   - New Health Factor calculation:
+     ```
+     Collateral: 2 WETH × $1,500 × 0.80 = $2,400
+     Debt: $2,700
+     Health Factor = $2,400 / $2,700 = 0.889
+     ```
+   - Status: **🔴 LIQUIDATION ELIGIBLE** - HF < 1.0
+
+5. **Observe Liquidation Warning**
+   - Red banner appears: "LIQUIDATION ELIGIBLE"
+   - Health factor shows in red
+   - Trend indicator shows "worsening"
+   - Suggestions to add collateral or repay debt
+
+### Part C: Using the Liquidator Dashboard
+
+**User B (Liquidator)**:
+
+6. **Access Liquidator Dashboard**
+   - Open new browser tab/window
+   - Connect with Account B (different from borrower)
+   - Navigate to `/liquidator` (or click "🤖 Liquidator" in nav)
+   - View the Liquidator Dashboard
+
+7. **Start the Liquidator Bot**
+   - Click "▶️ Start Bot" button
+   - Bot status changes to "● Active"
+   - Bot begins scanning for liquidatable positions
+
+8. **View Liquidatable Positions**
+   - User A's position appears in "Liquidatable" section (red)
+   - Position shows:
+     - Health Factor: 0.889
+     - Total Debt: $2,700
+     - Total Collateral: $3,000
+     - Max Liquidation: $1,350 (50% of debt)
+     - Potential Profit: ~$67.50 (5% of $1,350)
+
+9. **Configure Auto-Liquidation**
+   - Toggle "Auto-Liquidate" ON
+   - Adjust liquidation delay slider (e.g., 5 seconds)
+   - Bot will automatically execute when countdown completes
+
+10. **Watch Countdown Timer**
+    - Yellow banner appears: "⏳ Liquidating..."
+    - Countdown shows seconds remaining
+    - Progress bar depletes as countdown progresses
+    - Target borrower address shown
+
+### Part D: Executing Liquidation
+
+11. **Liquidation Execution**
+    - At countdown = 0, transaction is submitted
+    - MetaMask popup appears (confirm quickly for auto-flow)
+    - Toast notification: "💰 Liquidation Executed!"
+    - Details: Debt repaid, collateral seized, bonus earned
+
+12. **View Results**
+    - Statistics update:
+      - Total Liquidations: 1
+      - Total Profit: ~$67.50
+      - Debt Repaid: ~$1,350
+      - Collateral Seized: ~$1,417.50 (includes 5% bonus)
+    - Recent Liquidations list shows the event
+    - Click event for detailed breakdown
+
+13. **Check Borrower's Position (User A)**
+    - Switch back to Account A tab
+    - Health Factor improved:
+      ```
+      Previous: 0.889 (liquidatable)
+      After partial liquidation: ~1.2+ (safer)
+      ```
+    - Debt reduced by ~50%
+    - Collateral reduced proportionally + 5% penalty
+
+### Part E: Manual Liquidation (Alternative)
+
+14. **Manual Liquidation Flow**
+    - If auto-liquidate is OFF, positions remain in list
+    - Click "Liquidate" button on a position
+    - Confirmation modal appears:
+      - Shows debt to repay (max 50%)
+      - Shows collateral to receive (+ 5%)
+      - Shows potential profit
+    - Click "Execute Liquidation"
+    - Confirm in MetaMask
+
+### Understanding the Numbers
+
+**Liquidation Example Breakdown**:
+```
+Borrower's Position (before):
+- Collateral: 2 WETH @ $1,500 = $3,000
+- Debt: 2,700 DAI
+- Health Factor: 0.889 (liquidatable)
+
+Liquidation Execution:
+- Max Liquidation (50% close factor): 1,350 DAI
+- Liquidator repays: 1,350 DAI
+- Liquidator receives: $1,350 × 1.05 = $1,417.50 in WETH
+- WETH received: $1,417.50 / $1,500 = 0.945 WETH
+
+Borrower's Position (after):
+- Collateral: 2 - 0.945 = 1.055 WETH @ $1,500 = $1,582.50
+- Debt: 2,700 - 1,350 = 1,350 DAI
+- Health Factor: ($1,582.50 × 0.80) / $1,350 = 0.938
+  (Still at risk - may need another liquidation)
+
+Liquidator's Profit:
+- Paid: $1,350 (DAI)
+- Received: $1,417.50 (WETH)
+- Net Profit: $67.50 (5% bonus)
+```
+
+**Key Takeaways**:
+- ✅ Positions become liquidatable when Health Factor < 1.0
+- ✅ Liquidators earn 5% bonus on collateral seized
+- ✅ Maximum 50% of debt can be liquidated per transaction
+- ✅ Multiple liquidations may be needed for severely underwater positions
+- ✅ Liquidation improves (or maintains) borrower's health factor
+- ✅ Bot can be configured for automatic or manual execution
+
+---
+
 ## Next Steps
 
 After completing these scenarios, you can:

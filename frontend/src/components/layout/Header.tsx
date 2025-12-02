@@ -91,6 +91,9 @@ export default function Header({
               <NavLink href="/" icon="📊">
                 Dashboard
               </NavLink>
+              <NavLink href="/liquidator" icon="🤖">
+                Liquidator
+              </NavLink>
               <NavLink href="/analytics" icon="📈">
                 Analytics
               </NavLink>
@@ -127,6 +130,7 @@ export default function Header({
       <div className="md:hidden border-t border-gray-200 dark:border-gray-700 px-4 py-2">
         <nav className="flex items-center justify-around">
           <NavLink href="/" icon="📊">Dashboard</NavLink>
+          <NavLink href="/liquidator" icon="🤖">Liquidator</NavLink>
           <NavLink href="/analytics" icon="📈">Analytics</NavLink>
           <NavLink href="/status" icon="🔧">Status</NavLink>
         </nav>
