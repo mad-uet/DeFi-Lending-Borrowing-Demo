@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { Contract, parseUnits } from 'ethers';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useContract } from '@/hooks/useContract';
-import { TOKEN_CONFIGS } from '@/lib/contracts';
-import { parseUnits } from 'ethers';
+import { TOKEN_CONFIGS, ERC20_ABI } from '@/lib/contracts';
 import toast from 'react-hot-toast';
 
 export default function Faucet() {
@@ -27,8 +27,6 @@ export default function Faucet() {
 
     try {
       // Get ERC20 contract with mint function
-      const { Contract } = await import('ethers');
-      const { ERC20_ABI } = await import('@/lib/contracts');
       const tokenContract = new Contract(token.address, ERC20_ABI, signer);
 
       // Mint 1000 tokens

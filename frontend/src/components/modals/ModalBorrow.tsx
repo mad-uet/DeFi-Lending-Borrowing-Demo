@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { Contract, parseUnits } from 'ethers';
 import { BorrowAsset, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useUserAccountData } from '@/hooks/useUserAccountData';
 import { useTransactionNotifications } from '@/hooks/useNotifications';
 import { formatTokenAmount } from '@/lib/utils';
-import { ADDRESSES } from '@/lib/contracts';
+import { ADDRESSES, LENDING_POOL_ABI } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
 import { SimpleTransactionProgress, useTransactionProgress } from '@/components/ui/TransactionProgress';
 import toast from 'react-hot-toast';
-import { parseUnits } from 'ethers';
 
 interface ModalBorrowProps {
   asset: BorrowAsset;
@@ -47,9 +47,6 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
     }
 
     try {
-      const { Contract } = await import('ethers');
-      const { LENDING_POOL_ABI } = await import('@/lib/contracts');
-
       const amountWei = parseUnits(amount, asset.decimals);
 
       setStatus({ status: 'pending', message: 'Borrowing tokens...' });

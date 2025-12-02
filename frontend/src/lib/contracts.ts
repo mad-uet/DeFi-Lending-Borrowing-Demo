@@ -1,4 +1,9 @@
+'use client';
+
 import { TokenConfig } from '@/types';
+
+// Prevent Turbopack from deleting this module during HMR
+export const __contracts_module__ = true;
 
 // Contract ABIs - Import from artifacts
 export const LENDING_POOL_ABI = [

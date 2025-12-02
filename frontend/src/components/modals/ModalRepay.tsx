@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { Contract, parseUnits } from 'ethers';
 import { UserBorrow, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useUserAccountData } from '@/hooks/useUserAccountData';
 import { useTransactionNotifications } from '@/hooks/useNotifications';
 import { formatTokenAmount, formatUSD } from '@/lib/utils';
-import { ADDRESSES } from '@/lib/contracts';
+import { ADDRESSES, ERC20_ABI, LENDING_POOL_ABI } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
 import { ApprovalTransactionProgress, useTransactionProgress } from '@/components/ui/TransactionProgress';
 import toast from 'react-hot-toast';
-import { parseUnits } from 'ethers';
 
 interface ModalRepayProps {
   borrow: UserBorrow;
@@ -69,9 +69,6 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
     }
 
     try {
-      const { Contract } = await import('ethers');
-      const { ERC20_ABI, LENDING_POOL_ABI } = await import('@/lib/contracts');
-
       const amountWei = parseUnits(amount, borrow.asset.decimals);
 
       // Step 1: Approve
