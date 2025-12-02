@@ -62,8 +62,13 @@ export default function AnimatedToast({ notification, onClose, onRead }: Animate
     requestAnimationFrame(() => {
       setIsVisible(true);
     });
+  }, []);
+
+  // Mark as read once on mount (separate effect to avoid dependency issues)
+  useEffect(() => {
     onRead();
-  }, [onRead]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - only run once on mount
 
   const handleClose = () => {
     setIsExiting(true);
