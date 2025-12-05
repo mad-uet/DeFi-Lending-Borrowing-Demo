@@ -6,6 +6,7 @@ import { UserSupply, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useUserAccountData } from '@/hooks/useUserAccountData';
 import { useTransactionNotifications } from '@/hooks/useNotifications';
+import { useTransactionHistory } from '@/hooks/useTransactionHistory';
 import { formatTokenAmount, formatUSD } from '@/lib/utils';
 import { ADDRESSES, LENDING_POOL_ABI } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
@@ -21,6 +22,7 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
   const { account, signer } = useWeb3();
   const { accountData } = useUserAccountData();
   const { notifyTransactionSuccess, notifyTransactionError, notifyLiquidationRisk } = useTransactionNotifications();
+  const { addTransaction, updateTransaction } = useTransactionHistory();
   const [amount, setAmount] = useState('');
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
   const [status, setStatus] = useState<TransactionStatus>({
@@ -80,6 +82,15 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
       txProgress.setConfirming();
       setStatus({ status: 'pending', message: 'Withdrawing tokens...' });
       
+      // Record transaction as pending
+      const txId = addTransaction({
+        type: 'withdraw',
+        asset: supply.asset.symbol,
+        amount: amount,
+        status: 'pending',
+        healthFactorBefore: currentHealthFactor,
+      });
+      
       const lendingPoolContract = new Contract(ADDRESSES.LendingPool, LENDING_POOL_ABI, signer);
       const tx = await lendingPoolContract.withdraw(supply.asset.address, amountWei);
       
@@ -92,6 +103,13 @@ export default function ModalWithdraw({ supply, onClose }: ModalWithdrawProps) {
         status: 'success',
         message: `Successfully withdrawn ${amount} ${supply.asset.symbol}!`,
         hash: receipt.hash,
+      });
+      
+      // Update transaction as confirmed
+      updateTransaction(txId, {
+        status: 'confirmed',
+        txHash: receipt.hash,
+        healthFactorAfter: newHealthFactor,
       });
       
       toast.success(`Successfully withdrawn ${amount} ${supply.asset.symbol}!`, { id: 'withdraw' });

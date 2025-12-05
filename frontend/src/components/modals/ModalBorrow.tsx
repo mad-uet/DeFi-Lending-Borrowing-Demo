@@ -6,6 +6,7 @@ import { BorrowAsset, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useUserAccountData } from '@/hooks/useUserAccountData';
 import { useTransactionNotifications } from '@/hooks/useNotifications';
+import { useTransactionHistory } from '@/hooks/useTransactionHistory';
 import { formatTokenAmount } from '@/lib/utils';
 import { ADDRESSES, LENDING_POOL_ABI } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
@@ -21,6 +22,7 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
   const { account, signer } = useWeb3();
   const { accountData } = useUserAccountData();
   const { notifyTransactionSuccess, notifyTransactionError, notifyLiquidationRisk } = useTransactionNotifications();
+  const { addTransaction, updateTransaction } = useTransactionHistory();
   const [amount, setAmount] = useState('');
   const [acknowledgeRisk, setAcknowledgeRisk] = useState(false);
   const [status, setStatus] = useState<TransactionStatus>({
@@ -52,6 +54,15 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
       setStatus({ status: 'pending', message: 'Borrowing tokens...' });
       txProgress.startTransaction();
       
+      // Record transaction as pending
+      const txId = addTransaction({
+        type: 'borrow',
+        asset: asset.symbol,
+        amount: amount,
+        status: 'pending',
+        healthFactorBefore: currentHealthFactor,
+      });
+      
       // Step 1: Confirm in wallet
       txProgress.setConfirming();
       const lendingPoolContract = new Contract(ADDRESSES.LendingPool, LENDING_POOL_ABI, signer);
@@ -68,6 +79,13 @@ export default function ModalBorrow({ asset, onClose }: ModalBorrowProps) {
         status: 'success',
         message: `Successfully borrowed ${amount} ${asset.symbol}!`,
         hash: receipt.hash,
+      });
+      
+      // Update transaction as confirmed
+      updateTransaction(txId, {
+        status: 'confirmed',
+        txHash: receipt.hash,
+        healthFactorAfter: newHealthFactor,
       });
       
       toast.success(`Successfully borrowed ${amount} ${asset.symbol}!`, { id: 'borrow' });

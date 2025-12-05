@@ -7,6 +7,7 @@ import { useWeb3 } from '@/hooks/useWeb3';
 import { useContract } from '@/hooks/useContract';
 import { useUserAccountData } from '@/hooks/useUserAccountData';
 import { useTransactionNotifications } from '@/hooks/useNotifications';
+import { useTransactionHistory } from '@/hooks/useTransactionHistory';
 import { formatTokenAmount, formatUSD, parseTokenAmount } from '@/lib/utils';
 import { ADDRESSES, ERC20_ABI, LENDING_POOL_ABI } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
@@ -22,6 +23,7 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
   const { account, signer } = useWeb3();
   const { accountData } = useUserAccountData();
   const { notifyTransactionSuccess, notifyTransactionError } = useTransactionNotifications();
+  const { addTransaction, updateTransaction } = useTransactionHistory();
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState<TransactionStatus>({
     status: 'idle',
@@ -64,6 +66,14 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
       setStatus({ status: 'pending', message: 'Depositing tokens...' });
       const lendingPoolContract = new Contract(ADDRESSES.LendingPool, LENDING_POOL_ABI, signer);
       
+      // Record transaction as pending
+      const txId = addTransaction({
+        type: 'deposit',
+        asset: asset.symbol,
+        amount: amount,
+        status: 'pending',
+      });
+      
       const depositTx = await lendingPoolContract.deposit(asset.address, amountWei);
       
       // Step 3: Executing
@@ -78,6 +88,12 @@ export default function ModalSupply({ asset, onClose }: ModalSupplyProps) {
         status: 'success',
         message: `Successfully deposited ${amount} ${asset.symbol}!`,
         hash: receipt.hash,
+      });
+      
+      // Update transaction as confirmed
+      updateTransaction(txId, {
+        status: 'confirmed',
+        txHash: receipt.hash,
       });
       
       toast.success(`Successfully deposited ${amount} ${asset.symbol}!`, { id: 'deposit' });

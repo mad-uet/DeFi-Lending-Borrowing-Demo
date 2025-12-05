@@ -6,6 +6,7 @@ import { UserBorrow, TransactionStatus } from '@/types';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useUserAccountData } from '@/hooks/useUserAccountData';
 import { useTransactionNotifications } from '@/hooks/useNotifications';
+import { useTransactionHistory } from '@/hooks/useTransactionHistory';
 import { formatTokenAmount, formatUSD } from '@/lib/utils';
 import { ADDRESSES, ERC20_ABI, LENDING_POOL_ABI } from '@/lib/contracts';
 import TransactionPreview from '@/components/ui/TransactionPreview';
@@ -21,6 +22,7 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
   const { account, signer } = useWeb3();
   const { accountData } = useUserAccountData();
   const { notifyTransactionSuccess, notifyTransactionError } = useTransactionNotifications();
+  const { addTransaction, updateTransaction } = useTransactionHistory();
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState<TransactionStatus>({
     status: 'idle',
@@ -90,6 +92,15 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
       txProgress.setConfirming();
       setStatus({ status: 'pending', message: 'Repaying loan...' });
       
+      // Record transaction as pending
+      const txId = addTransaction({
+        type: 'repay',
+        asset: borrow.asset.symbol,
+        amount: amount,
+        status: 'pending',
+        healthFactorBefore: currentHealthFactor,
+      });
+      
       const lendingPoolContract = new Contract(ADDRESSES.LendingPool, LENDING_POOL_ABI, signer);
       const tx = await lendingPoolContract.repay(borrow.asset.address, amountWei);
       
@@ -104,6 +115,13 @@ export default function ModalRepay({ borrow, onClose }: ModalRepayProps) {
         status: 'success',
         message: `Successfully repaid ${amount} ${borrow.asset.symbol}!`,
         hash: receipt.hash,
+      });
+      
+      // Update transaction as confirmed
+      updateTransaction(txId, {
+        status: 'confirmed',
+        txHash: receipt.hash,
+        healthFactorAfter: newHealthFactor,
       });
       
       toast.success(`Successfully repaid ${amount} ${borrow.asset.symbol}!`, { id: 'repay' });
