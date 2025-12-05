@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
 import { useWeb3 } from './useWeb3';
 
 export interface Transaction {
@@ -51,7 +51,21 @@ function saveTransactionsToStorage(account: string | null, txs: Transaction[]): 
   }
 }
 
-export function useTransactionHistory() {
+// Context type
+interface TransactionHistoryContextType {
+  transactions: Transaction[];
+  isLoading: boolean;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'timestamp'>) => string;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => void;
+  clearHistory: () => void;
+  getRecentTransactions: (count?: number) => Transaction[];
+  getTransactionsByType: (type: Transaction['type']) => Transaction[];
+}
+
+const TransactionHistoryContext = createContext<TransactionHistoryContextType | null>(null);
+
+// Provider component
+export function TransactionHistoryProvider({ children }: { children: ReactNode }) {
   const { account } = useWeb3();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,6 +130,101 @@ export function useTransactionHistory() {
   const getTransactionsByType = useCallback((type: Transaction['type']) => {
     return transactions.filter(tx => tx.type === type);
   }, [transactions]);
+
+  return (
+    <TransactionHistoryContext.Provider
+      value={{
+        transactions,
+        isLoading,
+        addTransaction,
+        updateTransaction,
+        clearHistory,
+        getRecentTransactions,
+        getTransactionsByType,
+      }}
+    >
+      {children}
+    </TransactionHistoryContext.Provider>
+  );
+}
+
+// Hook to use the context
+export function useTransactionHistory() {
+  const context = useContext(TransactionHistoryContext);
+  
+  // If not wrapped in provider, create a standalone instance (for backwards compatibility)
+  const { account } = useWeb3();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const accountRef = useRef(account);
+  accountRef.current = account;
+
+  useEffect(() => {
+    if (context) return; // Skip if using context
+    const loaded = loadTransactions(account);
+    setTransactions(loaded);
+    setIsLoading(false);
+  }, [account, context]);
+
+  const addTransaction = useCallback((tx: Omit<Transaction, 'id' | 'timestamp'>) => {
+    if (context) return context.addTransaction(tx);
+    
+    const currentAccount = accountRef.current;
+    const newTx: Transaction = {
+      ...tx,
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+    };
+    
+    setTransactions(prev => {
+      const updated = [newTx, ...prev];
+      saveTransactionsToStorage(currentAccount, updated);
+      return updated;
+    });
+
+    console.log('[TxHistory] Added transaction:', newTx.type, newTx.asset, newTx.amount);
+    return newTx.id;
+  }, [context]);
+
+  const updateTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
+    if (context) return context.updateTransaction(id, updates);
+    
+    const currentAccount = accountRef.current;
+    setTransactions(prev => {
+      const updated = prev.map(tx => 
+        tx.id === id ? { ...tx, ...updates } : tx
+      );
+      saveTransactionsToStorage(currentAccount, updated);
+      return updated;
+    });
+    
+    console.log('[TxHistory] Updated transaction:', id, updates);
+  }, [context]);
+
+  const clearHistory = useCallback(() => {
+    if (context) return context.clearHistory();
+    
+    const key = getStorageKey(accountRef.current);
+    if (key) {
+      localStorage.removeItem(key);
+    }
+    setTransactions([]);
+  }, [context]);
+
+  const getRecentTransactions = useCallback((count: number = 5) => {
+    if (context) return context.getRecentTransactions(count);
+    return transactions.slice(0, count);
+  }, [context, transactions]);
+
+  const getTransactionsByType = useCallback((type: Transaction['type']) => {
+    if (context) return context.getTransactionsByType(type);
+    return transactions.filter(tx => tx.type === type);
+  }, [context, transactions]);
+
+  // Return context values if available, otherwise standalone values
+  if (context) {
+    return context;
+  }
 
   return {
     transactions,

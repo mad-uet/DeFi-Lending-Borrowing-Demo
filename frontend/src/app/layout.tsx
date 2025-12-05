@@ -6,6 +6,7 @@ import { NotificationProvider } from '@/hooks/useNotifications'
 import { EducationalModeProvider } from '@/hooks/useEducationalMode'
 import { SimulationProvider } from '@/hooks/useSimulation'
 import { LiquidatorBotProvider } from '@/hooks/useLiquidatorBot'
+import { TransactionHistoryProvider } from '@/hooks/useTransactionHistory'
 import { ToastContainer } from '@/components/ui/NotificationCenter'
 import { Toaster } from 'react-hot-toast'
 import { Header } from '@/components/layout'
@@ -28,38 +29,40 @@ export default function RootLayout({
       <body className={inter.className}>
         <Web3Provider>
           <NotificationProvider>
-            <EducationalModeProvider>
-              <SimulationProvider>
-                <LiquidatorBotProvider>
-                  <ScrollToTop />
-                  <Header />
-                  {children}
-                  <ToastContainer />
-                  <Toaster
-                    position="top-right"
-                    toastOptions={{
-                      duration: 4000,
-                      style: {
-                        background: '#363636',
-                        color: '#fff',
-                      },
-                      success: {
-                        iconTheme: {
-                          primary: '#22c55e',
-                          secondary: '#fff',
+            <TransactionHistoryProvider>
+              <EducationalModeProvider>
+                <SimulationProvider>
+                  <LiquidatorBotProvider>
+                    <ScrollToTop />
+                    <Header />
+                    {children}
+                    <ToastContainer />
+                    <Toaster
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
+                        style: {
+                          background: '#363636',
+                          color: '#fff',
                         },
-                      },
-                      error: {
-                        iconTheme: {
-                          primary: '#ef4444',
-                          secondary: '#fff',
+                        success: {
+                          iconTheme: {
+                            primary: '#22c55e',
+                            secondary: '#fff',
+                          },
                         },
-                      },
-                    }}
-                  />
-                </LiquidatorBotProvider>
-              </SimulationProvider>
-            </EducationalModeProvider>
+                        error: {
+                          iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#fff',
+                          },
+                        },
+                      }}
+                    />
+                  </LiquidatorBotProvider>
+                </SimulationProvider>
+              </EducationalModeProvider>
+            </TransactionHistoryProvider>
           </NotificationProvider>
         </Web3Provider>
       </body>
