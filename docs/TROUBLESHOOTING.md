@@ -502,16 +502,40 @@ const data = useSWR(
 
 ### Error: `Stale price`
 
-**Problem**: Price oracle data too old
+**Problem**: Price oracle data too old (older than 1 hour)
 
 **Solution**:
 
-**Local Development**:
+**Quick Fix** (Recommended for development):
+
+```bash
+# Run the price update script
+npm run update:prices
+```
+
+This updates all mock price feeds to the current timestamp.
+
+**Automatic Fix**:
+The `npm start` command now automatically updates prices after deployment.
+
+**Manual Fix**:
 
 ```typescript
-// Update mock price feed
-await mockPriceFeed.updateAnswer(newPrice);
+// Update individual price feed
+const priceFeed = await ethers.getContractAt("MockV3Aggregator", priceFeedAddress);
+await priceFeed.updateAnswer(await priceFeed.latestAnswer());
 ```
+
+**Why This Happens**:
+- The PriceOracle contract requires price data to be fresh (< 1 hour old)
+- Mock price feeds set their timestamp when deployed
+- If you restart the node or time passes, prices become stale
+- This is a safety feature to prevent using outdated price data
+
+**Long-term Solution** (Production):
+- Use real Chainlink price feeds that update automatically
+- Chainlink oracles update prices regularly (every few minutes)
+- No manual updates needed on mainnet/testnets
 
 **Testnet/Mainnet**:
 

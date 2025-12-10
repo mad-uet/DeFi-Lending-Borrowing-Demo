@@ -13,6 +13,7 @@
     "deploy:local": "hardhat run scripts/deploy-mocks.ts --network localhost",
     "deploy:all": "hardhat run scripts/deploy-all.ts --network localhost",
     "deploy:lending": "hardhat run scripts/deploy-lending-pool.ts --network localhost",
+    "update:prices": "hardhat run scripts/update-prices.ts --network localhost",
     "copy:artifacts": "npx ts-node scripts/copy-artifacts-to-frontend.ts",
     "start": "powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1",
     "stop": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
