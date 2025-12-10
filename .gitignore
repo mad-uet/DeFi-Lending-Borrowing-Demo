@@ -44,6 +44,7 @@ report.md
 # ================================
 # IDE & Editor
 # ================================
+.github/
 .vscode/
 .idea/
 *.swp
@@ -63,6 +64,7 @@ Thumbs.db
 # Plans & Documentation (Dev only)
 # ================================
 plans/
+reference/
 knowledge.md
 
 # ================================

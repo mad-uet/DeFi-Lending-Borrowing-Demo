@@ -121,6 +121,13 @@ if (-not $SkipDeploy) {
         if ($Verbose) {
             Write-Host $DeployOutput -ForegroundColor Gray
         }
+        
+        # Update price feeds to prevent stale price errors
+        Write-Host "     Updating price feeds..." -ForegroundColor Gray
+        $UpdateOutput = & npx hardhat run scripts/update-prices.ts --network localhost 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "     Price feeds updated" -ForegroundColor Green
+        }
     } else {
         Write-ErrorMsg "Contract deployment failed"
         Write-Host $DeployOutput -ForegroundColor Red
